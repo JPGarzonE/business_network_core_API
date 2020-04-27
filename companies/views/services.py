@@ -1,0 +1,99 @@
+"""Company services views."""
+
+# Django REST framework
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+
+# Models
+from companies.models import Company, Service, VisibilityState
+
+# Permissions
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from companies.permissions import IsCompanyAccountOwner, IsDataOwner
+
+# Serializers
+from companies.serializers import ServiceModelSerializer, CreateCompanyServiceSerializer
+
+class ServiceViewSet(mixins.ListModelMixin,
+                      mixins.CreateModelMixin,
+                      mixins.RetrieveModelMixin,
+                      mixins.UpdateModelMixin,
+                      mixins.DestroyModelMixin,
+                      viewsets.GenericViewSet):
+    """Service view set"""
+
+    serializer_class = ServiceModelSerializer
+
+    def dispatch(self, request, *args, **kwargs):
+        """Verifiy that the company exists"""
+        username = kwargs['username']
+        self.company = get_object_or_404(Company, user__username = username)
+
+        return super(ServiceViewSet, self).dispatch(request, *args, **kwargs)
+
+    def get_account_entity(self):
+        """Return the entity father of the data."""
+        return self.company
+
+    def get_permissions(self):
+        """Assign permission based on action"""
+        if self.action in ['list']:
+            permissions = [AllowAny]
+        elif self.action in ['retrieve']:
+            permissions = [IsDataOwner]
+        elif self.action in ['create']:
+            permissions = [IsAuthenticated, IsCompanyAccountOwner]
+        else:
+            permissions = [IsAuthenticated, IsCompanyAccountOwner, IsDataOwner]
+
+        return [permission() for permission in permissions]
+
+
+    def get_queryset(self):
+        """Return company services"""
+        return Service.objects.filter(
+            company = self.company,
+            visibility = VisibilityState.OPEN
+        )
+
+    def get_object(self):
+        """Return the service by the id"""
+        service = get_object_or_404(
+            Service,
+            id = self.kwargs['pk'],
+            visibility = VisibilityState.OPEN
+        )
+
+        return service
+
+    def perform_destroy(self, instance):
+        """Disable service."""
+        instance.visibility = VisibilityState.DELETED
+        instance.save()
+
+    def create(self, request, *args, **kwargs):
+        """Handle Service creation."""
+        service_serializer = CreateCompanyServiceSerializer(
+            data = request.data,
+            context = {'company': self.company}
+        )
+        service_serializer.is_valid(raise_exception = True)
+        service = service_serializer.save()
+
+        data = self.get_serializer(service).data
+        data_status = status.HTTP_201_CREATED
+        
+        return Response(data, status = data_status)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Add extra data to the response."""
+        response = super(ServiceViewSet, self).retrieve(request, *args, **kwargs)
+
+        data = {
+            'service': response.data
+        }
+        data_status = status.HTTP_200_OK
+
+        return Response( data, status = data_status )
