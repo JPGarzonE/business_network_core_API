@@ -38,7 +38,7 @@ class UserViewSet(mixins.ListModelMixin,
 
     def get_permissions(self):
         """Assign permissions based on actions"""
-        if self.action in ['signup', 'login', 'retrieve', 'list']:
+        if self.action in ['signup', 'login', 'list', 'retrieve']:
             permissions = [AllowAny]
         else:
             permissions = [IsAuthenticated, IsAccountOwner]
@@ -79,12 +79,9 @@ class UserViewSet(mixins.ListModelMixin,
         """Add extra data to the response."""
         response = super(UserViewSet, self).retrieve(request, *args, **kwargs)
 
-        user = User.objects.filter(
-            username = kwargs.get('username')
-        )
-
         data = {
-            'user': response.data
+            'user': response.data,
+            'is_owner': request.user.username == response.data.get("username")
         }
 
         response.data = data

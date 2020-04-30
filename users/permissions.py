@@ -8,7 +8,7 @@ class IsAccountOwner(BasePermission):
 
     def has_permission(self, request, view):
         """Let object permission grant access."""
-        obj = view.get_account_entity()
+        obj = view.get_object()
 
         return self.has_object_permission(request, view, obj)
 
