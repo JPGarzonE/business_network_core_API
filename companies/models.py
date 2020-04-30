@@ -12,7 +12,7 @@ class Company(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField('users.User', on_delete = models.PROTECT)
     nit = models.CharField(unique=True, max_length = 20)
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=60)
     industry = models.CharField(max_length=60, blank=True, null=True)
     verification = models.ForeignKey('users.Verification', models.PROTECT)
     web_url = models.CharField(max_length=150, blank=True, null=True)

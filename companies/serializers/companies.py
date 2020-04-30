@@ -14,7 +14,7 @@ class CompanyModelSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(
         min_length=4,
-        max_length=20,
+        max_length=60,
         validators=[UniqueValidator(queryset=Company.objects.all())]
     )
 
