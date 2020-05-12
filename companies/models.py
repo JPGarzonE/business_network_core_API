@@ -8,6 +8,9 @@
 from django.db import models
 from users.models import VisibilityState
 
+# Utils
+from enum import Enum
+
 class Company(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField('users.User', on_delete = models.PROTECT)
@@ -157,6 +160,7 @@ class Location(models.Model):
     zip = models.CharField(max_length=45, blank=True, null=True)
     principal = models.BooleanField(default = False)
     company = models.ForeignKey(Company, models.PROTECT)
+    media = models.ForeignKey('Media', models.PROTECT, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -173,7 +177,17 @@ class Location(models.Model):
 class Media(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=60)
-    type = models.CharField(max_length=5)
+
+    class Types(Enum):
+        IMAGE = 'Image'
+        VIDEO = 'Video'
+
+    type = models.CharField(
+        max_length=5,
+        choices = [(typeOption, typeOption.value) for typeOption in Types],
+        null=False,
+        blank=False,    
+    )
 
     class Meta:
         db_table = 'media'

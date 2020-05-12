@@ -4,10 +4,13 @@
 from rest_framework import serializers
 
 # Models
-from companies.models import Service
+from companies.models import Service, Media
+from companies.serializers.media import MediaModelSerializer
 
 class ServiceModelSerializer(serializers.ModelSerializer):
     """Service model serializer."""
+
+    media = MediaModelSerializer()
 
     class Meta:
         """Service meta class."""
@@ -58,10 +61,19 @@ class CreateCompanyServiceSerializer(serializers.Serializer):
         required = False
     )
 
+    media = MediaModelSerializer( required = False )
+
     def create(self, data):
         """Create new company service."""
         company = self.context['company']
-        
+        media = None
+
+        if( data.get('media') ):
+            media_data = data.pop("media")
+            media = Media.objects.create( **media_data )
+
+        data['media'] = media
+
         service = Service.objects.create(
             company = company,
             **data

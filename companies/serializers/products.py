@@ -4,10 +4,13 @@
 from rest_framework import serializers
 
 # Models
-from companies.models import Product
+from companies.models import Product, Media
+from companies.serializers.media import MediaModelSerializer
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
+
+    media = MediaModelSerializer()
 
     class Meta:
         """Product meta class."""
@@ -58,10 +61,18 @@ class CreateCompanyProductSerializer(serializers.Serializer):
         required = False
     )
 
+    media = MediaModelSerializer( required = False )
+
     def create(self, data):
         """Create new company product."""
         company = self.context['company']
-        
+        media = None
+
+        if( data.get('media') ):
+            media_data = data.pop("media")
+            media = Media.objects.create( **media_data )
+
+        data['media'] = media
         product = Product.objects.create(
             company = company,
             **data
