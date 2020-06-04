@@ -51,7 +51,8 @@ class CreateCompanyDnaelementSerializer(serializers.Serializer):
     description = serializers.CharField(
         min_length = 2,
         max_length = 155,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     media = MediaModelSerializer( required = False )

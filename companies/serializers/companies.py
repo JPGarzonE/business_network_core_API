@@ -23,6 +23,18 @@ class CompanyModelSerializer(serializers.ModelSerializer):
         message = "El nit debe estar acorde al formato de la registraduria"
     )
 
+    description = serializers.CharField(
+        max_length = 150,
+        required = False,
+        allow_null = True
+    )
+
+    web_url = serializers.CharField(
+        max_length = 70,
+        required = False,
+        allow_null = True
+    )
+
     class Meta:
         model = Company
         fields = ('id', 'name', 'nit', 'industry', 

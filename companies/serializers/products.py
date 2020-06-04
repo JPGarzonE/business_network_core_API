@@ -1,5 +1,8 @@
 """Products serializer."""
 
+# Django
+from django.db import transaction
+
 # Django rest framework
 from rest_framework import serializers
 
@@ -33,6 +36,29 @@ class ProductModelSerializer(serializers.ModelSerializer):
         )
 
 
+    def update(self, instance, validated_data):
+        """
+            Cutomize the update function for the serializer to update the
+            related_field values.
+        """
+        media = None
+
+        if( 'media' in validated_data ):
+            media_data = validated_data.pop('media')
+            media_instance = instance.media
+            media_serializer = self.fields['media']
+
+            media = media_serializer.update(instance = media_instance, validated_data = media_data)
+
+        product_updated = super().update(instance, validated_data)
+
+        if( media ):
+            product_updated.media = media
+
+        return product_updated
+
+
+
 
 class CreateCompanyProductSerializer(serializers.Serializer):
     """Create company service"""
@@ -50,19 +76,24 @@ class CreateCompanyProductSerializer(serializers.Serializer):
     )
 
     description = serializers.CharField(
-        min_length = 2,
         max_length = 155,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     price = serializers.CharField(
-        min_length = 2,
+        min_length = 0,
         max_length = 20,
-        required = False
+        required = False,
+        allow_null = True
     )
 
-    media = MediaModelSerializer( required = False )
+    media = MediaModelSerializer(
+        required = False,
+        allow_null = True
+    )
 
+    @transaction.atomic
     def create(self, data):
         """Create new company product."""
         company = self.context['company']

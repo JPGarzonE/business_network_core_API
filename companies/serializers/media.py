@@ -15,8 +15,8 @@ class MediaModelSerializer(serializers.ModelSerializer):
     )
 
     type = serializers.CharField(
-        min_length = 2,
-        max_length = 5
+        min_length = 3,
+        max_length = 10
     )
 
     class Meta:

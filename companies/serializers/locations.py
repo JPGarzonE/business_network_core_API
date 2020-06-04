@@ -52,24 +52,27 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
     region = serializers.CharField(
         min_length = 2,
         max_length = 40,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     address = serializers.CharField(
         min_length = 2,
         max_length = 40,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     zip = serializers.CharField(
         min_length = 2,
         max_length = 10,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     media = MediaModelSerializer( required = False )
 
-    principal = serializers.BooleanField(required = False)
+    principal = serializers.BooleanField( required = False )
 
     def create(self, data):
         """Create new company location."""

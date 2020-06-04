@@ -179,11 +179,11 @@ class Media(models.Model):
     name = models.CharField(max_length=60)
 
     class Types(Enum):
-        IMAGE = 'Image'
-        VIDEO = 'Video'
+        IMAGE = 'image'
+        VIDEO = 'video'
 
     type = models.CharField(
-        max_length=5,
+        max_length=10,
         choices = [(typeOption, typeOption.value) for typeOption in Types],
         null=False,
         blank=False,    
