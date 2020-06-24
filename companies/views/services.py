@@ -5,6 +5,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Models
 from companies.models import Company, Service, VisibilityState
@@ -14,11 +15,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Serializers
-from companies.serializers import ServiceModelSerializer, CreateCompanyServiceSerializer
+from companies.serializers import ServiceModelSerializer, HandleCompanyServiceSerializer
 
 class ServiceViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
@@ -41,8 +41,6 @@ class ServiceViewSet(mixins.ListModelMixin,
         """Assign permission based on action"""
         if self.action in ['list']:
             permissions = [AllowAny]
-        elif self.action in ['retrieve']:
-            permissions = [IsDataOwner]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:
@@ -75,7 +73,7 @@ class ServiceViewSet(mixins.ListModelMixin,
 
     def create(self, request, *args, **kwargs):
         """Handle Service creation."""
-        service_serializer = CreateCompanyServiceSerializer(
+        service_serializer = HandleCompanyServiceSerializer(
             data = request.data,
             context = {'company': self.company}
         )
@@ -87,13 +85,44 @@ class ServiceViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
-    def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
-        response = super(ServiceViewSet, self).retrieve(request, *args, **kwargs)
+    def partial_update(self, request, *args, **kwargs):
+        """Handle product partial update and add a 
+        media to a product by its id if its the case"""
+        instance = self.get_object()
+        service_serializer = HandleCompanyServiceSerializer(
+            instance = instance,
+            data = request.data,
+            partial = True
+        )
 
-        data = {
-            'service': response.data
-        }
-        data_status = status.HTTP_200_OK
+        service_serializer.is_valid(raise_exception = True)
+        service = service_serializer.save()
 
-        return Response( data, status = data_status )
+        data = self.get_serializer(service).data
+        data_status = status.HTTP_201_CREATED
+        
+        return Response(data, status = data_status)
+
+
+class ServiceDetailView(APIView):
+    """
+        Retrieve the detail of a service.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, format = None):
+        """Return the service by the id"""
+        service = self.get_object(pk)
+        serializer = ServiceModelSerializer(service)
+
+        return Response(serializer.data)
+
+    def get_object(self, pk):
+        service = get_object_or_404(
+            Service,
+            id = pk,
+            visibility = VisibilityState.OPEN
+        )
+
+        return service

@@ -8,7 +8,7 @@ class IsAccountOwner(BasePermission):
 
     def has_permission(self, request, view):
         """Let object permission grant access."""
-        obj = view.get_object()
+        obj = view.get_account_entity()
 
         return self.has_object_permission(request, view, obj)
 
@@ -31,3 +31,14 @@ class IsRelationOwner(BasePermission):
         """Check object and user are the same"""
 
         return request.user == obj.requester or request.user == obj.addressed
+
+class UserIsVerified(BasePermission):
+    """Allow acces to the account that is verified"""
+
+    message = "You can't do this action. You're not verified yet."
+
+    def has_permission(self, request, view):
+        """Let object permission grant access."""
+        user_entity = view.get_account_entity()
+
+        return user_entity.is_verified

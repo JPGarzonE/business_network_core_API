@@ -5,6 +5,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Models
 from companies.models import Company, Product, VisibilityState
@@ -14,11 +15,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Serializers
-from companies.serializers import ProductModelSerializer, CreateCompanyProductSerializer
+from companies.serializers import ProductModelSerializer, HandleCompanyProductSerializer
 
 class ProductViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
@@ -41,13 +41,11 @@ class ProductViewSet(mixins.ListModelMixin,
         """Assign permission based on action"""
         if self.action in ['list']:
             permissions = [AllowAny]
-        elif self.action in ['retrieve']:
-            permissions = [IsDataOwner]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:
             permissions = [IsAuthenticated, IsCompanyAccountOwner, IsDataOwner]
-
+        print("Get permissions")
         return [permission() for permission in permissions]
 
 
@@ -75,7 +73,7 @@ class ProductViewSet(mixins.ListModelMixin,
 
     def create(self, request, *args, **kwargs):
         """Handle Product creation."""
-        product_serializer = CreateCompanyProductSerializer(
+        product_serializer = HandleCompanyProductSerializer(
             data = request.data,
             context = {'company': self.company}
         )
@@ -87,13 +85,44 @@ class ProductViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
-    def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
-        response = super(ProductViewSet, self).retrieve(request, *args, **kwargs)
+    def partial_update(self, request, *args, **kwargs):
+        """Handle product partial update and add a 
+        media to a product by its id if its the case"""
+        instance = self.get_object()
+        product_serializer = HandleCompanyProductSerializer(
+            instance = instance,
+            data = request.data,
+            partial = True
+        )
 
-        data = {
-            'product': response.data
-        }
+        product_serializer.is_valid(raise_exception = True)
+        product = product_serializer.save()
+
+        data = self.get_serializer(product).data
         data_status = status.HTTP_200_OK
+        
+        return Response(data, status = data_status)
 
-        return Response( data, status = data_status )
+
+class ProductDetailView(APIView):
+    """
+        Retrieve the detail of a product.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, format = None):
+        """Return the product by the id"""
+        product = self.get_object(pk)
+        serializer = ProductModelSerializer(product)
+
+        return Response(serializer.data)
+
+    def get_object(self, pk):
+        product = get_object_or_404(
+            Product,
+            id = pk,
+            visibility = VisibilityState.OPEN
+        )
+
+        return product

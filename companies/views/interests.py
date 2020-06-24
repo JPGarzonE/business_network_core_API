@@ -39,10 +39,8 @@ class InterestViewSet(mixins.ListModelMixin,
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['list']:
-            permissions = [AllowAny]
-        elif self.action in ['retrieve']:
-            permissions = [IsDataOwner]
+        if self.action in ['list', 'retrieve']:
+            permissions = [IsAuthenticated]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:

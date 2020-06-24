@@ -1,24 +1,31 @@
 # serializers.py
 
 # Django
+from django.conf import settings
 from django.contrib.auth import password_validation, authenticate
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import RegexValidator
+from django.db import transaction
 from django.utils import timezone
-
-# Models
-from users.models import User
-from companies.models import Company
-from users.models import Verification
-from companies.serializers import CompanyModelSerializer
 
 # Django REST Framework
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 from rest_framework.validators import UniqueValidator
 
+# Models
+from users.models import User
+from companies.models import Company
+from users.models import Verification
+from multimedia.models import Document
+
+# Serializers
+from companies.serializers import CompanyModelSerializer
+from users.serializers.verifications import VerificationModelSerializer
+
 # Utilities
-# import jwt
+from datetime import timedelta
+import jwt
 
 class UserModelSerializer(serializers.ModelSerializer):
 
@@ -26,8 +33,13 @@ class UserModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'company',)
+        fields = ('id', 'username', 'email', 'is_verified', 'company', )
 
+class UserNestedModelSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('id', 'username')
 
 class UserSignupSerializer(serializers.Serializer):
     """User sign up serializer.
@@ -39,6 +51,8 @@ class UserSignupSerializer(serializers.Serializer):
     )
 
     company = CompanyModelSerializer()
+
+    comercial_certificate_id = serializers.IntegerField(required = False)
 
     # password
     password = serializers.CharField(min_length=8, max_length=64)
@@ -56,6 +70,7 @@ class UserSignupSerializer(serializers.Serializer):
         
         return data
 
+    @transaction.atomic
     def create(self, data):
         """Handle user and profile creation"""
         data.pop('password_confirmation')
@@ -66,16 +81,38 @@ class UserSignupSerializer(serializers.Serializer):
         username = username_lower.strip().replace(" ", ".")
         data["username"] = username
 
-        verification = Verification.objects.create( verified = False, state = "none" )
-        company_data["verification"] = verification
+        if data.get("comercial_certificate_id"):
+            certificate_id = data.pop("comercial_certificate")
+            certificate = Document.objects.get( id = certificate_id )
 
-        try:
-            Company.objects.create( user = user, **company_data )
-        except UnboundLocalError:
-            user = User.objects.create_user(**data, is_verified = True, is_client = True)
-            Company.objects.create( user = user, **company_data )
+            if certificate:
+                verification = Verification.objects.create( state = "InProgress" )
+                certificate.verification = verification
+        else:
+            verification = Verification.objects.create( state = "None" )
+        
+        data["verification"] = verification
 
-        return user
+        user = User.objects.create_user(**data, is_client = True)
+        company = Company.objects.create( user = user, **company_data )
+
+        token = self.generate_verification_token(user)
+        verification.token = token
+        verification.save()
+
+        token, created = Token.objects.get_or_create( user = user )
+        return user, token.key
+
+    def generate_verification_token(self, user):
+        """Create JWT token that the user can use to verify its account."""
+        expiration_date = timezone.now() + timedelta(days = 3)
+        payload = {
+            'user': user.username,
+            'exp': int(expiration_date.timestamp()),
+            'type': 'email_confirmation'
+        }
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm = 'HS256')
+        return token.decode()
 
 class UserLoginSerializer(serializers.Serializer):
     """ User Login Serializer
@@ -91,9 +128,7 @@ class UserLoginSerializer(serializers.Serializer):
         user = authenticate( username = data['email'], password = data['password'] )
 
         if not user:
-            raise serializers.ValidationError('Invalid credentials')        
-        if not user.is_verified:
-            raise serializers.ValidationError('Account is not verified yet')
+            raise serializers.ValidationError('Invalid credentials')
         
         self.context['user'] = user
         return data
@@ -103,3 +138,37 @@ class UserLoginSerializer(serializers.Serializer):
         token, created = Token.objects.get_or_create( user = self.context['user'] )
         return self.context['user'], token.key
     
+class AccountVerificationSerializer(serializers.Serializer):
+    """Account verification serializer"""
+
+    token = serializers.CharField()
+
+    def validate_token(self, data):
+        """Verify token is valid."""
+
+        try:
+            payload = jwt.decode(data, settings.SECRET_KEY, algorithms = ['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise serializers.ValidationError('Verification link has expired')
+        except jwt.PyJWTError:
+            raise serializers.ValidationError('Invalid token')
+        
+        if payload['type'] != 'email_confirmation':
+            raise serializers.ValidationError('Invalid token')
+
+        self.context['payload'] = payload
+        return data
+
+    @transaction.atomic
+    def save(self):
+        """Update user's verified status"""
+        payload = self.context['payload']
+        user = User.objects.get(username = payload['user'])
+        user.is_verified = True
+        user.save()
+
+        verification = user.verification
+        verification.verified = True
+        verification.state = "Success"
+        verification.finish_date = timezone.now()
+        verification.save()

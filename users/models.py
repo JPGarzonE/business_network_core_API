@@ -1,3 +1,4 @@
+# Models Users
 
 # Django
 from django.db import models
@@ -12,6 +13,9 @@ from django.core.mail import send_mail
 
 # Django timezone
 from django.utils import timezone
+
+# Models
+from multimedia.models import Document, Media
 
 # Utils
 from enum import Enum
@@ -44,7 +48,6 @@ class Deal(models.Model):
     class Meta:
         db_table = 'deal'
         unique_together = (('id', 'relationship'),)
-
 
 class UserManager(BaseUserManager):
     """
@@ -118,6 +121,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     username = models.CharField(max_length = 50, null = False, unique = True)
 
+    verification = models.ForeignKey('Verification', models.PROTECT)
+
     is_staff = models.BooleanField(
         _('staff status'),
         default=False,
@@ -144,7 +149,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     is_verified = models.BooleanField(
         'verified',
-        default=True,
+        default=False,
         help_text='Set to true when the user have verified its email address.'
     )
 
@@ -199,6 +204,7 @@ class Relationship(models.Model):
 class Verification(models.Model):
     id = models.BigAutoField(primary_key=True)
     verified = models.BooleanField(default = False)
+    token = models.TextField(null=True)
 
     class States(Enum):
         NONE = 'None'
@@ -215,7 +221,7 @@ class Verification(models.Model):
         blank=False,
     )
 
-    application_date = models.DateTimeField(blank=True, null=True)
+    application_date = models.DateTimeField(help_text = _('date when was generated'), default=timezone.now)
     finish_date = models.DateTimeField(blank=True, null=True)
 
     class Meta:

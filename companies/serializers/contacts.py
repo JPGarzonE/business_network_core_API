@@ -3,6 +3,9 @@
 # Django rest framework
 from rest_framework import serializers
 
+# Django
+from django.db import transaction
+
 # Models
 from companies.models import Contact
 
@@ -19,7 +22,8 @@ class ContactModelSerializer(serializers.ModelSerializer):
             'company',
             'email',
             'phone',
-            'ext_phone'
+            'ext_phone',
+            'principal'
         )
 
 class CreateContactSerializer(serializers.Serializer):
@@ -47,13 +51,14 @@ class CreateContactSerializer(serializers.Serializer):
 
     principal = serializers.BooleanField(required = False)
 
+    @transaction.atomic
     def create(self, data):
         """Create new company contacts."""
         company = self.context['company']
         
         contact = Contact.objects.create(
             company = company,
-            **data
+            **data,
         )
 
         return contact

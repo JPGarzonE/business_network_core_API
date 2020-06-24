@@ -1,11 +1,14 @@
 """Dnaelement serializer."""
 
+# Django
+from django.db import transaction
+
 # Django rest framework
 from rest_framework import serializers
 
 # Models
 from companies.models import Dnaelement, Media
-from companies.serializers.media import MediaModelSerializer
+from multimedia.serializers.media import MediaModelSerializer
 
 class DnaelementModelSerializer(serializers.ModelSerializer):
     """Dnaelement model serializer."""
@@ -33,8 +36,8 @@ class DnaelementModelSerializer(serializers.ModelSerializer):
 
 
 
-class CreateCompanyDnaelementSerializer(serializers.Serializer):
-    """Create company Dnaelement"""
+class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
+    """Create and update a company Dnaelement"""
 
     requires_context = True
 
@@ -55,22 +58,63 @@ class CreateCompanyDnaelementSerializer(serializers.Serializer):
         allow_null = True
     )
 
-    media = MediaModelSerializer( required = False )
+    media_id = serializers.IntegerField(required = False)
 
+    class Meta:
+        """Dnaelement meta class."""
+
+        model = Dnaelement
+
+        fields = (
+            'id',
+            'category',
+            'name',
+            'description',
+            'media_id'
+        )
+
+        read_only_fields = (
+            'id',
+            'company'
+            'media_id',
+        )
+
+    @transaction.atomic
     def create(self, data):
         """Create new company Dnaelement."""
         company = self.context['company']
         media = None
 
-        if( data.get('media') ):
-            media_data = data.pop("media")
-            media = Media.objects.create( **media_data )
-
-        data['media'] = media
+        if( data.get('media_id') ):
+            media_id = data.pop("media_id")
+            media = Media.objects.get( id = media_id )
 
         dnaelement = Dnaelement.objects.create(
             company = company,
             **data
         )
 
+        if media:
+            dnaelement.media = media
+            dnaelement.save()
+
         return dnaelement
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+            Cutomize the update function for the serializer to update the
+            related_field values.
+        """
+        media = None
+
+        if 'media_id' in validated_data :
+            media_id = validated_data.pop('media_id')
+            media = Media.objects.get( id = media_id )
+            
+            if media :
+                instance.media = media
+
+        dna_updated = super().update(instance, validated_data)     
+
+        return dna_updated

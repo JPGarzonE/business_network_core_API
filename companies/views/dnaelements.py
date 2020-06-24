@@ -5,6 +5,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Models
 from companies.models import Company, Dnaelement, VisibilityState
@@ -14,11 +15,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Serializers
-from companies.serializers import DnaelementModelSerializer, CreateCompanyDnaelementSerializer
+from companies.serializers import DnaelementModelSerializer, HandleCompanyDnaelementSerializer
 
 class DnaelementViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
@@ -41,8 +41,6 @@ class DnaelementViewSet(mixins.ListModelMixin,
         """Assign permission based on action"""
         if self.action in ['list']:
             permissions = [AllowAny]
-        elif self.action in ['retrieve']:
-            permissions = [IsDataOwner]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:
@@ -75,7 +73,7 @@ class DnaelementViewSet(mixins.ListModelMixin,
 
     def create(self, request, *args, **kwargs):
         """Handle Dnaelement creation."""
-        dnaelement_serializer = CreateCompanyDnaelementSerializer(
+        dnaelement_serializer = HandleCompanyDnaelementSerializer(
             data = request.data,
             context = {'company': self.company}
         )
@@ -87,13 +85,44 @@ class DnaelementViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
-    def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
-        response = super(DnaelementViewSet, self).retrieve(request, *args, **kwargs)
+    def partial_update(self, request, *args, **kwargs):
+        """Handle dna partial update and add a 
+        media to a dna by its id if its the case"""
+        instance = self.get_object()
+        dna_serializer = HandleCompanyDnaelementSerializer(
+            instance = instance,
+            data = request.data,
+            partial = True
+        )
 
-        data = {
-            'dnaelement': response.data
-        }
-        data_status = status.HTTP_200_OK
+        dna_serializer.is_valid(raise_exception = True)
+        dna = dna_serializer.save()
 
-        return Response( data, status = data_status )
+        data = self.get_serializer(dna).data
+        data_status = status.HTTP_201_CREATED
+        
+        return Response(data, status = data_status)
+
+
+class DnaelementDetailView(APIView):
+    """
+        Retrieve the detail of a DNAElement.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, format = None):
+        """Return the dnaelement by the id"""
+        dnaelement = self.get_object(pk)
+        serializer = DnaelementModelSerializer(dnaelement)
+
+        return Response(serializer.data)
+
+    def get_object(self, pk):
+        dnaelement = get_object_or_404(
+            Dnaelement,
+            id = pk,
+            visibility = VisibilityState.OPEN
+        )
+
+        return dnaelement

@@ -25,7 +25,7 @@ SECRET_KEY = '#5r-#squ6!+_80=nkd*_5hi7*j=f#^!(68=nj9nu)4%*)7t!z0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '172.31.17.197', 'api.chippy.com.co']
+ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '172.31.17.197', 'api.chippy.com.co', '192.168.0.9']
 
 
 # Application definition
@@ -39,18 +39,22 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    # Cors headers
+    'corsheaders',
+
     # Rest framework
     'rest_framework',
     'rest_framework.authtoken',
     
-    # Cors headers
-    'corsheaders',
+    # Storages
+    'storages',
 ]
 
 LOCAL_APPS = [
-    'users',
     'companies',
+    'multimedia',
     'searches',
+    'users',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -172,4 +176,8 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'https://chippy.com.co',
+    'http://192.168.0.9:3000',
 )
+
+# Media files storage config
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

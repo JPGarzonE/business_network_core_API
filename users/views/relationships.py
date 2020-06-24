@@ -11,7 +11,7 @@ from users.models import User, Relationship, Deal, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from users.permissions import IsAccountOwner, IsRelationOwner
+from users.permissions import IsAccountOwner, IsRelationOwner, UserIsVerified
 
 # Serializers
 from users.serializers import RelationshipModelSerializer, CreateRelationshipSerializer
@@ -20,17 +20,17 @@ from users.serializers import RelationshipModelSerializer, CreateRelationshipSer
 from django.db.utils import IntegrityError
 
 class RelationshipViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+                         mixins.CreateModelMixin,
+                         mixins.RetrieveModelMixin,
+                         mixins.UpdateModelMixin,
+                         mixins.DestroyModelMixin,
+                         viewsets.GenericViewSet):
     """Relationship view set"""
 
     serializer_class = RelationshipModelSerializer
 
     def dispatch(self, request, *args, **kwargs):
-        """Verifiy that the company exists"""
+        """Verifiy that the user exists"""
         user_id = kwargs['user_pk']
         self.user = get_object_or_404(User, id = user_id)
 
@@ -42,12 +42,10 @@ class RelationshipViewSet(mixins.ListModelMixin,
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['list']:
+        if self.action in ['list', 'retrieve']:
             permissions = [AllowAny]
-        elif self.action in ['retrieve']:
-            permissions = [IsRelationOwner]
         elif self.action in ['create']:
-            permissions = [IsAuthenticated, IsAccountOwner]
+            permissions = [IsAuthenticated, IsAccountOwner, UserIsVerified]
         else:
             permissions = [IsAuthenticated, IsAccountOwner, IsRelationOwner]
 
@@ -56,23 +54,33 @@ class RelationshipViewSet(mixins.ListModelMixin,
 
     def get_queryset(self):
         """Return company relationships"""
-        requester_relationships = Relationship.objects.filter(
-            requester = self.user,
-            visibility = VisibilityState.OPEN
-        )
+        if self.request.query_params.get('addressed_id'):
+            relationship = Relationship.objects.filter(
+                requester = self.user,
+                addressed = self.request.query_params.get('addressed_id'),
+                visibility = VisibilityState.OPEN
+            )
 
-        addressed_relationships = Relationship.objects.filter(
-            addressed = self.user,
-            visibility = VisibilityState.OPEN
-        )
+            return relationship
 
-        return requester_relationships | addressed_relationships
+        else:
+            requester_relationships = Relationship.objects.filter(
+                requester = self.user,
+                visibility = VisibilityState.OPEN
+            )
+
+            addressed_relationships = Relationship.objects.filter(
+                addressed = self.user,
+                visibility = VisibilityState.OPEN
+            )
+
+            return requester_relationships | addressed_relationships
 
     def get_object(self):
         """Return the relationship by the id"""
         relationship = get_object_or_404(
-            requester = self.user,
-            addressed = self.request.query_params.get('addressed_id'),
+            Relationship,
+            id = self.kwargs['pk'],
             visibility = VisibilityState.OPEN
         )
 

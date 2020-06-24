@@ -10,8 +10,8 @@ from companies.models import Company
     # Serializers
 from companies.serializers import CompanyModelSerializer
 
-class SearchCompaniesView(viewsets.GenericViewSet,
-                        generics.ListAPIView):
+class SearchCompaniesViewSet(viewsets.GenericViewSet,
+                            generics.ListAPIView):
     """
     Search view in charge of searching queries in companies model.
     """

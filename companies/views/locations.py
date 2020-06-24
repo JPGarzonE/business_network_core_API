@@ -42,7 +42,7 @@ class LocationViewSet(mixins.ListModelMixin,
         if self.action in ['list']:
             permissions = [AllowAny]
         elif self.action in ['retrieve']:
-            permissions = [IsDataOwner]
+            permissions = [IsAuthenticated]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:
@@ -82,6 +82,18 @@ class LocationViewSet(mixins.ListModelMixin,
         """Disable location."""
         instance.visibility = 'Deleted'
         instance.save()
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = LocationModelSerializer(
+            instance = instance,
+            data=  request.data,
+            context = {'company': self.company},
+            partial = True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         """Handle location creation."""

@@ -7,8 +7,9 @@ from django.db import transaction
 from rest_framework import serializers
 
 # Models
-from companies.models import Product, Media
-from companies.serializers.media import MediaModelSerializer
+from companies.models import Product
+from multimedia.models import Media
+from multimedia.serializers.media import MediaModelSerializer
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
@@ -36,32 +37,9 @@ class ProductModelSerializer(serializers.ModelSerializer):
         )
 
 
-    def update(self, instance, validated_data):
-        """
-            Cutomize the update function for the serializer to update the
-            related_field values.
-        """
-        media = None
 
-        if( 'media' in validated_data ):
-            media_data = validated_data.pop('media')
-            media_instance = instance.media
-            media_serializer = self.fields['media']
-
-            media = media_serializer.update(instance = media_instance, validated_data = media_data)
-
-        product_updated = super().update(instance, validated_data)
-
-        if( media ):
-            product_updated.media = media
-
-        return product_updated
-
-
-
-
-class CreateCompanyProductSerializer(serializers.Serializer):
-    """Create company service"""
+class HandleCompanyProductSerializer(serializers.ModelSerializer):
+    """Create and update a company product"""
 
     requires_context = True
 
@@ -88,10 +66,26 @@ class CreateCompanyProductSerializer(serializers.Serializer):
         allow_null = True
     )
 
-    media = MediaModelSerializer(
-        required = False,
-        allow_null = True
-    )
+    media_id = serializers.IntegerField(required = False)
+
+    class Meta:
+        """Product meta class."""
+
+        model = Product
+
+        fields = (
+            'id',
+            'category',
+            'name',
+            'price',
+            'description',
+            'media_id'
+        )
+
+        read_only_fields = (
+            'id',
+            'media_id',
+        )
 
     @transaction.atomic
     def create(self, data):
@@ -99,14 +93,36 @@ class CreateCompanyProductSerializer(serializers.Serializer):
         company = self.context['company']
         media = None
 
-        if( data.get('media') ):
-            media_data = data.pop("media")
-            media = Media.objects.create( **media_data )
+        if( data.get('media_id') ):
+            media_id = data.pop("media_id")
+            media = Media.objects.get( id = media_id )
 
-        data['media'] = media
         product = Product.objects.create(
             company = company,
             **data
         )
 
+        if media:
+            product.media = media
+            product.save()
+
         return product
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+            Cutomize the update function for the serializer to update the
+            related_field values.
+        """
+        media = None
+
+        if 'media_id' in validated_data :
+            media_id = validated_data.pop('media_id')
+            media = Media.objects.get( id = media_id )
+            
+            if media :
+                instance.media = media
+
+        product_updated = super().update(instance, validated_data)     
+
+        return product_updated

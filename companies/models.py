@@ -6,18 +6,19 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-from users.models import VisibilityState
+from users.models import User, Verification, VisibilityState
+from multimedia.models import Media
 
 # Utils
 from enum import Enum
 
 class Company(models.Model):
     id = models.BigAutoField(primary_key=True)
-    user = models.OneToOneField('users.User', on_delete = models.PROTECT)
+    user = models.OneToOneField(User, on_delete = models.PROTECT)
     nit = models.CharField(unique=True, max_length = 20)
     name = models.CharField(max_length=60)
+    logo = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
     industry = models.CharField(max_length=60, blank=True, null=True)
-    verification = models.ForeignKey('users.Verification', models.PROTECT)
     web_url = models.CharField(max_length=150, blank=True, null=True)
     description = models.CharField(max_length=150, blank=True, null=True)
     
@@ -65,7 +66,7 @@ class Dnaelement(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=45)
     category = models.CharField(max_length=45)
-    media = models.ForeignKey('Media', models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
     description = models.CharField(max_length=155, blank=True, null=True)
 
@@ -116,7 +117,7 @@ class Importantevents(models.Model):
     source_url = models.CharField(max_length=150, blank=True, null=True)
     name = models.CharField(max_length=45)
     description = models.CharField(max_length=155, blank=True, null=True)
-    media = models.ForeignKey('Media', models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT, db_column='Company_id')  # Field name made lowercase.
 
     visibility = models.CharField(
@@ -160,7 +161,7 @@ class Location(models.Model):
     zip = models.CharField(max_length=45, blank=True, null=True)
     principal = models.BooleanField(default = False)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey('Media', models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -172,25 +173,6 @@ class Location(models.Model):
 
     class Meta:
         db_table = 'location'
-
-
-class Media(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=60)
-
-    class Types(Enum):
-        IMAGE = 'image'
-        VIDEO = 'video'
-
-    type = models.CharField(
-        max_length=10,
-        choices = [(typeOption, typeOption.value) for typeOption in Types],
-        null=False,
-        blank=False,    
-    )
-
-    class Meta:
-        db_table = 'media'
 
 
 class Product(models.Model):

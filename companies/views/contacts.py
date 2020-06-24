@@ -11,7 +11,7 @@ from companies.models import Company, Contact, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from companies.permissions import IsCompanyAccountOwner, IsDataOwner
+from companies.permissions import IsCompanyAccountOwner, IsDataOwner, IsCompanyAccountOwnerOrIsVerified
 
 # Serializers
 from companies.serializers import ContactModelSerializer, CreateContactSerializer
@@ -40,7 +40,7 @@ class ContactViewSet(mixins.ListModelMixin,
     def get_permissions(self):
         """Assign permission based on action"""
         if self.action in ['list', 'retrieve']:
-            permissions = [AllowAny]
+            permissions = [IsAuthenticated, IsCompanyAccountOwnerOrIsVerified]
         elif self.action in ['create']:
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:

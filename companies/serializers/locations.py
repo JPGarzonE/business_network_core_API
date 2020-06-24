@@ -3,9 +3,12 @@
 # Django rest framework
 from rest_framework import serializers
 
+# Django
+from django.db import transaction
+
 # Models
 from companies.models import Location, Media
-from companies.serializers.media import MediaModelSerializer
+from multimedia.serializers.media import MediaModelSerializer
 
 class LocationModelSerializer(serializers.ModelSerializer):
     """Location model serializer."""
@@ -33,6 +36,25 @@ class LocationModelSerializer(serializers.ModelSerializer):
             'company'
             'media',
         )
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """Update a company location."""
+        company = self.context['company']
+        first_principal_location = Location.objects.filter( company = company, principal = True )
+
+        principal = validated_data.get("principal")
+
+        if principal is True:
+            if first_principal_location:
+                for location in first_principal_location:
+                    location.principal = False
+                    location.save()
+
+            instance.principal = validated_data.pop("principal")
+            instance.save()
+
+        return super().update(instance, validated_data)
 
 class CreateCompanyLocationSerializer(serializers.Serializer):
     """Create company location"""
@@ -74,12 +96,32 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
 
     principal = serializers.BooleanField( required = False )
 
+    @transaction.atomic
     def create(self, data):
         """Create new company location."""
         company = self.context['company']
+
+        first_principal_location = Location.objects.filter( company = company, principal = True )
+
+        if data.get("principal"):
+            principal = data.pop("principal")
+            if principal:
+                if first_principal_location:
+                    first_principal_location = first_principal_location[0]
+                    first_principal_location.principal = False
+                    first_principal_location.save()
+                principal = True
+            else:
+                principal = False
+        else:
+            if not first_principal_location:
+                principal = True
+            else:
+                principal = False
+
         media = None
 
-        if( data.get('media') ):
+        if data.get('media'):
             media_data = data.pop("media")
             media = Media.objects.create( **media_data )
 
@@ -87,6 +129,7 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
 
         location = Location.objects.create(
             company = company,
+            principal = principal,
             **data
         )
 

@@ -3,16 +3,23 @@
 # Django rest framework
 from rest_framework import serializers
 
+# Django
+from django.db import transaction
+
 # Models
 from users.models import User, Relationship, Verification
 
 # Serializers
+from users.serializers.users import UserNestedModelSerializer
+from companies.serializers.companies import CompanyModelSerializer
 from users.serializers.verifications import VerificationModelSerializer
 
 class RelationshipModelSerializer(serializers.ModelSerializer):
     """Relationship model serializer."""
 
     verification = VerificationModelSerializer()
+    addressed = UserNestedModelSerializer()
+    requester = UserNestedModelSerializer()
 
     class Meta:
         """Relationship meta class."""
@@ -52,6 +59,7 @@ class CreateRelationshipSerializer(serializers.Serializer):
         max_length = 30
     )
 
+    @transaction.atomic
     def create(self, data):
         """Create new user relationship."""
         requester = self.context['requester']
@@ -62,7 +70,7 @@ class CreateRelationshipSerializer(serializers.Serializer):
             id = addressed_id,
             is_active = True
         )
-        verification = Verification.objects.create( verified = False, state = "none" )
+        verification = Verification.objects.create( verified = False, state = "None" )
 
         relationship = Relationship.objects.create(
             requester = requester,

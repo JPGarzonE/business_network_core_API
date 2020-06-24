@@ -40,4 +40,10 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('products/<int:pk>/', ProductDetailView.as_view()),
+
+    path('services/<int:pk>/', ServiceDetailView.as_view()),
+
+    path('dnaelements/<int:pk>/', DnaelementDetailView.as_view()),
 ]

@@ -5,6 +5,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 # Permissions
 from rest_framework.permissions import (
@@ -18,19 +19,19 @@ from users.models import User
 from companies.models import Company
 
 # Serializer
-from users.serializers import UserModelSerializer, UserSignupSerializer, UserLoginSerializer
+from users.serializers import UserModelSerializer, UserSignupSerializer, UserLoginSerializer, AccountVerificationSerializer
 from companies.serializers import CompanyModelSerializer
 
 # Create your views here.
 
 class UserViewSet(mixins.ListModelMixin,
-                mixins.RetrieveModelMixin, 
-                mixins.UpdateModelMixin, 
+                mixins.RetrieveModelMixin,
                 viewsets.GenericViewSet):
     """User view set.
 
     Handle sign up, login and account verification.
     """
+    
     queryset = User.objects.filter(is_active=True, is_client=True)
     serializer_class = UserModelSerializer
     lookup_field = 'username'
@@ -46,7 +47,15 @@ class UserViewSet(mixins.ListModelMixin,
         return [permission() for permission in permissions]
 
     def get_queryset(self):
-        """Return companies"""
+        """Return users"""
+        email = self.request.query_params.get('email')
+
+        if email:
+            return User.objects.filter(
+                email = email,
+                is_active = True
+            )
+
         return User.objects.filter(
             is_active = True
         )
@@ -55,10 +64,13 @@ class UserViewSet(mixins.ListModelMixin,
     def signup(self, request):
         """User signup."""
         serializer = UserSignupSerializer( data = request.data )
-        serializer.is_valid( raise_exception = True )
-        
-        user = serializer.save()
-        data = UserModelSerializer(user).data
+        serializer.is_valid( raise_exception = True )   
+        user, token = serializer.save()
+
+        data = {
+            'user': UserModelSerializer(user).data,
+            'access_token': token
+        }
 
         return Response( data, status = status.HTTP_201_CREATED )
 
@@ -86,3 +98,19 @@ class UserViewSet(mixins.ListModelMixin,
 
         response.data = data
         return response
+
+
+class AccountVerificationAPIView(APIView):
+    """Account verification API view."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """Handle HTTP POST request"""
+
+        serializer = AccountVerificationSerializer(data = request.data)
+        serializer.is_valid(raise_exception = True)
+        serializer.save()
+        data = {'message': 'Felicitaciones, ¡Ahora ve y haz crecer tu marca!'}
+
+        return Response(data, status = status.HTTP_200_OK)

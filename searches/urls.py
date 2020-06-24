@@ -7,7 +7,7 @@ from rest_framework import routers
 from searches.views import *
 
 router = routers.DefaultRouter()
-router.register('companies', SearchCompaniesView)
+router.register('companies', SearchCompaniesViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
