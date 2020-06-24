@@ -101,21 +101,21 @@ class CreateImageSerializer(serializers.Serializer):
 
         image_storage = ImageStorage()
 
-        if not image_storage.exists(bucket_image_path):
-            image_storage.save(bucket_image_path, image_object)
-            image.name = imagename
-            image.type = image_extension
-            image.relative_path = bucket_image_path
-            image.absolute_path = image_storage.url(bucket_image_path).split("?")[0]
-            print("image")
-            print(image.absolute_path)
-            image.uploaded = True
-            image.save()
+        # if not image_storage.exists(bucket_image_path):
+        image_storage.save(bucket_image_path, image_object)
+        image.name = imagename
+        image.type = image_extension
+        image.relative_path = bucket_image_path
+        image.absolute_path = image_storage.url(bucket_image_path).split("?")[0]
+        print("image")
+        print(image.absolute_path)
+        image.uploaded = True
+        image.save()
 
-            return image
-        else:
-            raise Exception("File {imagename} alredy exists for the user {username} in bucket {bucket_name}".format(
-                imagename = image_object.name,
-                username = self.context['user'],
-                bucket_name = image_storage.bucket_name
-            ))
+        return image
+        # else:
+        #     raise Exception("File {imagename} alredy exists for the user {username} in bucket {bucket_name}".format(
+        #         imagename = image_object.name,
+        #         username = self.context['user'],
+        #         bucket_name = image_storage.bucket_name
+        #     ))

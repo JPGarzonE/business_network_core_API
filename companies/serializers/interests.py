@@ -42,7 +42,8 @@ class CreateCompanyInterestSerializer(serializers.Serializer):
 
     type = serializers.CharField(
         min_length = 3,
-        max_length = 60
+        max_length = 60,
+        required = False
     )
 
     description = serializers.CharField(

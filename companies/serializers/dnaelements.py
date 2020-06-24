@@ -55,7 +55,8 @@ class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
         min_length = 2,
         max_length = 155,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     media_id = serializers.IntegerField(required = False)

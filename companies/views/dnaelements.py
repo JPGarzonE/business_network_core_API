@@ -20,6 +20,7 @@ from companies.serializers import DnaelementModelSerializer, HandleCompanyDnaele
 class DnaelementViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
+                      mixins.RetrieveModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
     """Dnaelement view set"""

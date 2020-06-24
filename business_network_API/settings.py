@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '#5r-#squ6!+_80=nkd*_5hi7*j=f#^!(68=nj9nu)4%*)7t!z0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '172.31.17.197', 'api.chippy.com.co', '192.168.0.9']
+ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '172.31.0.44', 'api.joinconecty.com', '192.168.0.9']
 
 
 # Application definition
@@ -103,16 +103,25 @@ DATABASES = {
     #     'HOST': '127.0.0.1',
     #     'PORT': '3306',
     # },
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.mysql',
+    #     'NAME': 'bizlookdb',
+    #     'USER': 'admin',
+    #     'PASSWORD': 'bizlookadmindatabase0899',
+    #     'HOST': 'bizlook-db.cbs9dsbiuvh9.us-west-1.rds.amazonaws.com',
+    #     'PORT': '3306',
+    # },
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bizlookdb',
-        'USER': 'admin',
-        'PASSWORD': 'bizlookadmindatabase0899',
-        'HOST': 'bizlook-db.cbs9dsbiuvh9.us-west-1.rds.amazonaws.com',
-        'PORT': '3306',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'conectydb',
+        'USER': 'dbmanager',
+        'PASSWORD': 'conectyadmindatabase0899',
+        'HOST': 'conecty-db.cbs9dsbiuvh9.us-west-1.rds.amazonaws.com',
+        'PORT': '5432',
     }
 }
 
+# conectyadmindatabase0899
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators

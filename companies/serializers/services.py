@@ -56,7 +56,8 @@ class HandleCompanyServiceSerializer(serializers.ModelSerializer):
     description = serializers.CharField(
         max_length = 155,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     price = serializers.CharField(
