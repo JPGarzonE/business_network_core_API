@@ -25,7 +25,8 @@ SECRET_KEY = '#5r-#squ6!+_80=nkd*_5hi7*j=f#^!(68=nj9nu)4%*)7t!z0'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '172.31.0.44', 'api.joinconecty.com', '192.168.0.9']
+ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '52.52.146.46', '172.31.0.44', '172.31.28.18',
+    'api.joinconecty.com', '192.168.0.9']
 
 
 # Application definition
@@ -184,9 +185,27 @@ REST_FRAMEWORK = {
 # Corsheaders
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
-    'https://chippy.com.co',
+    'https://joinconecty.com',
     'http://192.168.0.9:3000',
 )
 
 # Media files storage config
+AWS_UPLOAD_BUCKET = "business-network-profile-files"
+
+AWS_UPLOAD_USERNAME = "business-network-api-core-user"
+
+AWS_UPLOAD_GROUP = "business-network-multimedia-clients"
+
+AWS_UPLOAD_REGION = "us-west-1"
+
+AWS_UPLOAD_ACCESS_KEY_ID = "AKIA4BR2HNWAP3TUWE6C"
+
+AWS_ACCESS_KEY_ID = "AKIA4BR2HNWAP3TUWE6C"
+
+AWS_SECRET_ACCESS_KEY = "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"
+
+AWS_UPLOAD_SECRET_KEY = "MtzOoUURFFr6uZHG9aPtiA3P6rwS6sjCOZQvSIgr"
+
+AWS_DEFAULT_ACL = None
+
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'

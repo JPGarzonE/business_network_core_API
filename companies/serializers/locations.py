@@ -75,21 +75,24 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
         min_length = 2,
         max_length = 40,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     address = serializers.CharField(
         min_length = 2,
         max_length = 40,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     zip = serializers.CharField(
         min_length = 2,
         max_length = 10,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     media = MediaModelSerializer( required = False )
