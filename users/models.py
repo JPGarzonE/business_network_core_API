@@ -113,7 +113,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
     """
-    Custom user for the platform, without username, 
+    Custom user for the platform, without username,
     first_name and last_name.
     """
     

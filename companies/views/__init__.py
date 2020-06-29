@@ -5,3 +5,5 @@ from .interests import *
 from .locations import *
 from .products import *
 from .services import *
+from .unregistered_companies import *
+from .unregistered_relationships import *

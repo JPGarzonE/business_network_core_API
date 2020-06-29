@@ -30,9 +30,7 @@ class ProductViewSet(mixins.ListModelMixin,
         """Verifiy that the company exists"""
         username = kwargs['username']
         self.company = get_object_or_404(Company, user__username = username)
-        print("dispatch")
-        print(request)
-        print(request.user)
+
         return super(ProductViewSet, self).dispatch(request, *args, **kwargs)
 
     def get_account_entity(self):
@@ -47,7 +45,7 @@ class ProductViewSet(mixins.ListModelMixin,
             permissions = [IsAuthenticated, IsCompanyAccountOwner]
         else:
             permissions = [IsAuthenticated, IsCompanyAccountOwner, IsDataOwner]
-        print("Get permissions")
+        
         return [permission() for permission in permissions]
 
 

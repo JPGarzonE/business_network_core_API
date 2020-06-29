@@ -6,7 +6,22 @@ from companies.views import *
 
 
 router = routers.DefaultRouter()
-router.register('companies', CompanyViewSet)
+
+router.register(
+    'companies/unregistered',
+    UnregisteredCompanyViewSet,
+    basename = 'unregistered_companies'
+)
+router.register(
+    'relationships/unregistered',
+    UnregisteredRelationshipViewSet,
+    basename = 'unregistered_relationships'
+)
+router.register(
+    'companies', 
+    CompanyViewSet,
+    basename = 'companies'
+)
 router.register(
     'companies/(?P<username>[\w.]+)/locations',
     LocationViewSet,
@@ -40,6 +55,8 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
+
+    path('companies/<username>/relationships/unregistered/', ListUnregisteredRelationships.as_view()),
 
     path('products/<int:pk>/', ProductDetailView.as_view()),
 

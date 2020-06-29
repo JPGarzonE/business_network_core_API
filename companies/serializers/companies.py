@@ -1,4 +1,4 @@
-# serializers.py
+# serializers/companies.py
 
 # Django-rest serializers
 from rest_framework import serializers

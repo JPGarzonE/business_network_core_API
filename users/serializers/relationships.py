@@ -1,4 +1,4 @@
-"""Products serializer."""
+# users/serializers/relationships/py
 
 # Django rest framework
 from rest_framework import serializers

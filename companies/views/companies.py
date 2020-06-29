@@ -1,6 +1,4 @@
-
-# Django
-from django.shortcuts import render
+# views/companies.py
 
 # Django-rest framework
 from rest_framework import mixins, status, viewsets
@@ -24,32 +22,32 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin, 
                     viewsets.GenericViewSet):
     """Company view set."""
-    
-    queryset = Company.objects.all().order_by('user__username')
+
     serializer_class = CompanyModelSerializer
     lookup_field = 'username'
     lookup_value_regex = '[\w.]+'
-
 
     def get_queryset(self):
         """Return companies"""
         name = self.request.query_params.get('name')
         nit = self.request.query_params.get('nit')
-        company_filter = Company.objects.all()
+        company_filter = None
 
         if name and nit:
             company_filter = Company.objects.filter(
-                name = name,
-                nit = nit
+                name__iexact = name,
+                nit__iexact = nit
             )
         elif name:
             company_filter = Company.objects.filter(
-                name = name
+                name__iexact = name
             )
         elif nit:
             company_filter = Company.objects.filter(
-                nit = nit
+                nit__iexact = nit
             )
+        else:
+            company_filter = Company.objects.all()
 
         return company_filter.exclude( visibility = VisibilityState.DELETED )
 
@@ -99,14 +97,3 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
         data_status = status.HTTP_200_OK
         
         return Response(data, status = data_status)
-
-    def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
-        response = super(CompanyViewSet, self).retrieve(request, *args, **kwargs)
-
-        data = {
-            'company': response.data
-        }
-        data_status = status.HTTP_200_OK
-
-        return Response( data, status = data_status )

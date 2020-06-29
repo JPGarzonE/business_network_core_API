@@ -6,6 +6,7 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
+from django.utils.translation import ugettext_lazy as _
 from users.models import User, Verification, VisibilityState
 from multimedia.models import Media
 
@@ -34,7 +35,7 @@ class Company(models.Model):
         db_table = 'company'
 
 
-class Companysocialnetwork(models.Model):
+class CompanySocialnetwork(models.Model):
     company = models.OneToOneField(Company, models.PROTECT, primary_key=True)
     social_network = models.ForeignKey('Socialnetwork', models.PROTECT)
 
@@ -103,7 +104,7 @@ class Employee(models.Model):
         db_table = 'employee'
 
 
-class Employeesocialnetwork(models.Model):
+class EmployeeSocialnetwork(models.Model):
     employee = models.OneToOneField(Employee, models.PROTECT, primary_key=True)
     social_network = models.ForeignKey('Socialnetwork', models.PROTECT)
 
@@ -112,7 +113,7 @@ class Employeesocialnetwork(models.Model):
         unique_together = (('employee', 'social_network'),)
 
 
-class Importantevents(models.Model):
+class ImportantEvent(models.Model):
     id = models.BigAutoField(primary_key=True)
     source_url = models.CharField(max_length=150, blank=True, null=True)
     name = models.CharField(max_length=45)
@@ -235,3 +236,52 @@ class Socialnetwork(models.Model):
 
     class Meta:
         db_table = 'socialnetwork'
+
+
+class UnregisteredCompany(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(unique=True, max_length=60)
+    nit = models.CharField(unique=True, max_length = 20, blank=True, null=True)
+    industry = models.CharField(max_length=60, blank=True, null=True)
+    email = models.EmailField(unique=True, blank=True, null=True)
+    country = models.CharField(max_length=50, blank=True, null=True)
+    city = models.CharField(max_length=50, blank=True, null=True)
+
+    class Meta:
+        db_table = 'unregisteredcompany'
+
+
+class UnregisteredRelationship(models.Model):
+    requester = models.ForeignKey(
+        Company, 
+        models.PROTECT, 
+        related_name = 'relation_requester',
+        help_text = _(
+            'Is the company that request the relationship.'
+            'It exist in the platform and is registered'
+        )
+    )
+    unregistered = models.ForeignKey(
+        UnregisteredCompany, 
+        models.PROTECT, 
+        related_name = 'relation_unregistered',
+        help_text = _(
+            'Is the company that is not official registered in the platform.'
+            'It was created by another user that could not find its partners registered'
+            'but wants to show it in its relationships, or was created by an admin'
+        )
+    )
+
+    type = models.CharField(max_length=30)
+
+    visibility = models.CharField(
+        max_length=20,
+        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
+        default = VisibilityState.OPEN,
+        null=False,
+        blank=False,
+    )
+
+    class Meta:
+        db_table = 'unregisteredrelationship'
+        unique_together = (('requester','unregistered'),)
