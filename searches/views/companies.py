@@ -6,9 +6,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 # other local apps
     # Models
-from companies.models import Company
+from companies.models import Company, UnregisteredCompany
     # Serializers
-from companies.serializers import CompanyModelSerializer
+from companies.serializers import CompanyModelSerializer, UnregisteredCompanyModelSerializer
+
+# utils
+from itertools import chain
 
 class SearchCompaniesViewSet(viewsets.GenericViewSet,
                             generics.ListAPIView):
@@ -21,4 +24,16 @@ class SearchCompaniesViewSet(viewsets.GenericViewSet,
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['name', 'description']
     filterset_fields = ['industry']
-    
+
+
+class SearchUnregisteredCompaniesViewSet(viewsets.GenericViewSet,
+                                        generics.ListAPIView):
+    """
+    Search view in charge of searching queries in unregistered companies model.
+    """
+
+    queryset = UnregisteredCompany.objects.all()
+    serializer_class = UnregisteredCompanyModelSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
+    search_fields = ['name', 'email']
+    filterset_fields = ['industry']

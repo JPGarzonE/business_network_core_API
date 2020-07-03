@@ -52,8 +52,7 @@ class MediaModelSerializer(serializers.ModelSerializer):
     def get_path(self, instance):
         image_storage = ImageStorage()
         image_path = instance.relative_path
-        print("Entra")
-        print(image_path)
+
         return image_storage.url(image_path)
 
 class CreateImageSerializer(serializers.Serializer):
@@ -106,8 +105,7 @@ class CreateImageSerializer(serializers.Serializer):
         image.type = image_extension
         image.relative_path = bucket_image_path
         image.absolute_path = image_storage.url(bucket_image_path).split("?")[0]
-        print("image")
-        print(image.absolute_path)
+
         image.uploaded = True
         image.save()
 
