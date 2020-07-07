@@ -18,8 +18,10 @@ class Company(models.Model):
     user = models.OneToOneField(User, on_delete = models.PROTECT)
     nit = models.CharField(unique=True, max_length = 20)
     name = models.CharField(max_length=60)
+    role = models.CharField(max_length=50, blank=True, null=True)
+    priority = models.CharField(max_length=50, blank=True, null=True)
     logo = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
-    industry = models.CharField(max_length=60, blank=True, null=True)
+    industry = models.CharField(max_length=60)
     web_url = models.CharField(max_length=150, blank=True, null=True)
     description = models.CharField(max_length=150, blank=True, null=True)
     

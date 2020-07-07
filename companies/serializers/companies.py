@@ -27,9 +27,13 @@ class CompanyModelSerializer(serializers.ModelSerializer):
         message = "El nit debe estar acorde al formato de la registraduria"
     )
 
-    industry = serializers.CharField(max_length=60, required = False)
+    industry = serializers.CharField(max_length=60)
 
     logo = MediaModelSerializer(required = False)
+
+    role = serializers.CharField(max_length=50, required = False)
+
+    priority = serializers.CharField(max_length=50, required = False)
 
     description = serializers.CharField(
         max_length = 150,
@@ -46,7 +50,7 @@ class CompanyModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ('id', 'name', 'nit', 'industry', 'logo',
-            'web_url', 'description')
+            'role', 'priority', 'web_url', 'description')
 
 
 class UpdateCompanySerializer(serializers.ModelSerializer):
