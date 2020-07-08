@@ -204,7 +204,6 @@ class Relationship(models.Model):
 class Verification(models.Model):
     id = models.BigAutoField(primary_key=True)
     verified = models.BooleanField(default = False)
-    token = models.TextField(null=True)
 
     class States(Enum):
         NONE = 'None'

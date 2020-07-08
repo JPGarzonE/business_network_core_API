@@ -49,9 +49,9 @@ class DocumentModelSerializer(serializers.ModelSerializer):
     def get_path(self, instance):
         file_storage = FileStorage()
         file_path = instance.relative_path
-        print("Entra")
-        print(file_path)
+
         return file_storage.url(file_path)
+
 
 class CreateDocumentSerializer(serializers.Serializer):
     """

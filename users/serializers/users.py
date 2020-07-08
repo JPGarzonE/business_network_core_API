@@ -23,9 +23,8 @@ from multimedia.models import Document
 from companies.serializers import CompanyModelSerializer
 from users.serializers.verifications import VerificationModelSerializer
 
-# Utilities
-from datetime import timedelta
-import jwt
+# Send email
+from users.serializers.verifications import send_verification_notification_email
 
 class UserModelSerializer(serializers.ModelSerializer):
 
@@ -82,7 +81,7 @@ class UserSignupSerializer(serializers.Serializer):
         data["username"] = username
 
         if data.get("comercial_certificate_id"):
-            certificate_id = data.pop("comercial_certificate")
+            certificate_id = data.pop("comercial_certificate_id")
             certificate = Document.objects.get( id = certificate_id )
 
             if certificate:
@@ -96,23 +95,15 @@ class UserSignupSerializer(serializers.Serializer):
         user = User.objects.create_user(**data, is_client = True)
         company = Company.objects.create( user = user, **company_data )
 
-        token = self.generate_verification_token(user)
-        verification.token = token
         verification.save()
+
+        if certificate and certificate.verification == verification:
+            send_verification_notification_email(user)
 
         token, created = Token.objects.get_or_create( user = user )
         return user, token.key
 
-    def generate_verification_token(self, user):
-        """Create JWT token that the user can use to verify its account."""
-        expiration_date = timezone.now() + timedelta(days = 3)
-        payload = {
-            'user': user.username,
-            'exp': int(expiration_date.timestamp()),
-            'type': 'email_confirmation'
-        }
-        token = jwt.encode(payload, settings.SECRET_KEY, algorithm = 'HS256')
-        return token.decode()
+    
 
 class UserLoginSerializer(serializers.Serializer):
     """ User Login Serializer

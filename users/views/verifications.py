@@ -30,7 +30,8 @@ from rest_framework.permissions import (
 
 # Serializer
 from multimedia.serializers import DocumentModelSerializer
-from users.serializers import VerificationModelSerializer
+from users.serializers import VerificationModelSerializer, HandleVerificationSerializer
+
 
 class UserVerificationAPIView(APIView):
     """
@@ -49,27 +50,22 @@ class UserVerificationAPIView(APIView):
 
     @transaction.atomic
     def patch(self, request, user_id = None):
-        verification = self.get_object(request)
+        instance = self.get_object(request)
 
-        if request.data.get("documents"):
-            documents = request.data.pop("documents")
+        vertification_serializer = HandleVerificationSerializer(
+            instance = instance,
+            data = request.data,
+            context = {'user': request.user},
+            partial = True
+        )
 
-            for document in documents:
-                document_object = Document.objects.get( id = document.get("id") )
-                document_object.verification = verification
-                document_object.save()
+        vertification_serializer.is_valid(raise_exception = True)
+        verification = vertification_serializer.save()
 
-            verification.state = "InProgress"
-            verification.save()
+        data = VerificationModelSerializer( verification ).data
+        data_status = status.HTTP_200_OK
 
-            serializer = VerificationModelSerializer( verification )
-            return Response( serializer.data, status = status.HTTP_200_OK )
-        else:
-            serializer = VerificationModelSerializer( verification, data = request.data, partial = True )
-
-            if serializer.is_valid( raise_exception = True ):
-                serializer.save()
-                return Response( serializer.data, status = status.HTTP_200_OK )
+        return Response( data, data_status )
 
 
     def get_object(self, request):

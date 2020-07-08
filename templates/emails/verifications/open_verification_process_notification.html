@@ -1,0 +1,19 @@
+<p>Company {{company.name}} has uploaded a new certificate document</p>
+<p>Below will be the information for the validation:</p> <br/>
+
+<ul>
+    <li>User Email: {{user.email}}</li> <br />
+    <li>Company Name: {{company.name}}</li> <br />
+    <li>Company NIT: {{company.nit}}</li> <br />
+    <li>Company Industry: {{company.industry}}</li> <br />
+    <li>
+        Certificate URL (This link is going to expire in 1 hour): {{certificate_url}}
+        <span style="color:#808080d4;font-weight:700;">
+            * If the certificate URL expires you have to request another with your admin credentials in 
+            <a href="https://joinconecty.com/admin/">https://joinconecty.com/admin/</a>
+        </span>
+    </li> <br />
+    <li>URL for the user to verify the email: 
+        <a href="{{verify_url}}">{{verify_url}}</a>
+    </li> <br />
+</ul>

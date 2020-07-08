@@ -76,7 +76,9 @@ ROOT_URLCONF = 'business_network_API.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -209,3 +211,18 @@ AWS_UPLOAD_SECRET_KEY = "MtzOoUURFFr6uZHG9aPtiA3P6rwS6sjCOZQvSIgr"
 AWS_DEFAULT_ACL = None
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# Email config
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmail.com'
+
+EMAIL_HOST_USER = 'pacmanjp99@gmail.com'
+
+EMAIL_HOST_PASSWORD = 'shqnomgyfizrxnov'
+
+EMAIL_PORT = 587
+
+EMAIL_USE_TLS = True
+
+DEFAULT_FROM_EMAIL = 'felipe@joinconecty.com'
