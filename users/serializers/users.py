@@ -26,13 +26,17 @@ from users.serializers.verifications import VerificationModelSerializer
 # Send email
 from users.serializers.verifications import send_verification_notification_email
 
+# Utils
+from datetime import timedelta
+import jwt
+
 class UserModelSerializer(serializers.ModelSerializer):
 
     company = CompanyModelSerializer()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'is_verified', 'company', )
+        fields = ('id', 'username', 'email', 'is_verified', 'is_staff', 'company', )
 
 class UserNestedModelSerializer(serializers.ModelSerializer):
 
@@ -80,6 +84,7 @@ class UserSignupSerializer(serializers.Serializer):
         username = username_lower.strip().replace(" ", ".")
         data["username"] = username
 
+        certificate = None
         if data.get("comercial_certificate_id"):
             certificate_id = data.pop("comercial_certificate_id")
             certificate = Document.objects.get( id = certificate_id )

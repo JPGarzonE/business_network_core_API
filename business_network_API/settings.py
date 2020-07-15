@@ -217,12 +217,12 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
 EMAIL_HOST = 'smtp.gmail.com'
 
-EMAIL_HOST_USER = 'pacmanjp99@gmail.com'
+EMAIL_HOST_USER = 'api.conecty@gmail.com'
 
-EMAIL_HOST_PASSWORD = 'shqnomgyfizrxnov'
+EMAIL_HOST_PASSWORD = 'prkzvweczzmciqim'
 
 EMAIL_PORT = 587
 
 EMAIL_USE_TLS = True
 
-DEFAULT_FROM_EMAIL = 'felipe@joinconecty.com'
+DEFAULT_FROM_EMAIL = 'api.conecty@gmail.com'

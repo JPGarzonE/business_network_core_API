@@ -23,14 +23,16 @@ from companies.models import Company
 from multimedia.models import Document
 
 # Permissions
+from users.permissions import IsAccountOwnerOrIsAdmin
 from rest_framework.permissions import (
     AllowAny,
-    IsAuthenticated
+    IsAuthenticated,
+    IsAdminUser
 )
 
 # Serializer
 from multimedia.serializers import DocumentModelSerializer
-from users.serializers import VerificationModelSerializer, HandleVerificationSerializer
+from users.serializers import VerificationModelSerializer, HandleVerificationSerializer, generate_verification_token
 
 
 class UserVerificationAPIView(APIView):
@@ -40,7 +42,7 @@ class UserVerificationAPIView(APIView):
     Handle update and retrive of the verification of a user
     """
 
-    permisssion_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, format = None):
         verification = self.get_object(request)
@@ -70,3 +72,29 @@ class UserVerificationAPIView(APIView):
 
     def get_object(self, request):
         return request.user.verification
+
+
+class UserVerificationTokenAPIView(APIView):
+    """
+    User verification view set
+    
+    Handle update and retrive of the verification of a user
+    """
+
+    permission_classes = [IsAccountOwnerOrIsAdmin]
+
+    def get(self, request, format = None, **kwargs):
+        user = self.get_account_entity()
+        verification_token = generate_verification_token(user)
+
+        data = {
+            "token": verification_token
+        }
+
+        return Response(data, status.HTTP_200_OK)
+
+    def get_account_entity(self):
+        username = self.kwargs.get("username")
+        user = get_object_or_404(User, username = username)
+
+        return user

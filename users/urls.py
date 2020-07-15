@@ -2,7 +2,7 @@
 
 from django.urls import include, path
 from rest_framework import routers
-from users.views import AccountVerificationAPIView, UserViewSet, RelationshipViewSet, UserVerificationAPIView
+from users.views import AccountVerificationAPIView, UserViewSet, RelationshipViewSet, UserVerificationAPIView, UserVerificationTokenAPIView
 # from users.views.user import 
 
 router = routers.DefaultRouter()
@@ -15,7 +15,8 @@ router.register(
 
 urlpatterns = [
     path('users/verify/', AccountVerificationAPIView.as_view(), name = 'verify_account'),
-    path('me/verification/', UserVerificationAPIView.as_view(), name = 'user_verification'),
+    path('users/<username>/verification/token/', UserVerificationTokenAPIView.as_view(), name="user_verification"),
+    path('me/verification/', UserVerificationAPIView.as_view(), name = 'user_verification_me'),
 
     path('', include(router.urls)),
 

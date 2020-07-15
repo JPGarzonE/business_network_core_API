@@ -42,3 +42,15 @@ class UserIsVerified(BasePermission):
         user_entity = view.get_account_entity()
 
         return user_entity.is_verified
+
+class IsAccountOwnerOrIsAdmin(BasePermission):
+    """Allow acces to the owner account or the admin account"""
+
+    message = "You re not allowed to perform this action."
+
+    def has_permission(self, request, view):
+        user = view.get_account_entity()
+        is_account_owner = (request.user == user)
+        is_admin = request.user.is_staff
+
+        return is_account_owner or is_admin

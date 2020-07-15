@@ -37,7 +37,7 @@ def send_verification_notification_email(user, certificate_path):
     token = generate_verification_token(user)
 
     subject = 'NEW verification process has been opened - Conecty API'
-    from_email, to_receivers = settings.EMAIL_HOST_USER, ["jgarzonebrath08@gmail.com",]
+    from_email, to_receivers = settings.EMAIL_HOST_USER, ["felipe@joinconecty.com",]
 
     content = render_to_string(
         'emails/verifications/open_verification_process_notification.html',
