@@ -1,10 +1,13 @@
-"""User relations views."""
+"""User relationship views."""
 
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+
+# Django
+from django.db.models import Q
 
 # Models
 from users.models import User, Relationship, Deal, VisibilityState
@@ -20,7 +23,6 @@ from users.serializers import RelationshipModelSerializer, CreateRelationshipSer
 from django.db.utils import IntegrityError
 
 class RelationshipViewSet(mixins.ListModelMixin,
-                         mixins.CreateModelMixin,
                          mixins.RetrieveModelMixin,
                          mixins.UpdateModelMixin,
                          mixins.DestroyModelMixin,
@@ -42,18 +44,18 @@ class RelationshipViewSet(mixins.ListModelMixin,
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['list', 'retrieve']:
-            permissions = [AllowAny]
-        elif self.action in ['create']:
-            permissions = [IsAuthenticated, IsAccountOwner, UserIsVerified]
-        else:
+        print("action")
+        print(self.action)
+        if self.action in ['update', 'destroy']:
             permissions = [IsAuthenticated, IsAccountOwner, IsRelationOwner]
+        else:
+            permissions = [AllowAny]
 
         return [permission() for permission in permissions]
 
 
     def get_queryset(self):
-        """Return company relationships"""
+        """Return user relationships"""
         if self.request.query_params.get('addressed_id'):
             relationship = Relationship.objects.filter(
                 requester = self.user,
@@ -64,17 +66,11 @@ class RelationshipViewSet(mixins.ListModelMixin,
             return relationship
 
         else:
-            requester_relationships = Relationship.objects.filter(
-                requester = self.user,
-                visibility = VisibilityState.OPEN
+            relationships = Relationship.objects.filter(
+                (Q(requester = self.user) | Q(addressed = self.user)) & Q(visibility = VisibilityState.OPEN)
             )
 
-            addressed_relationships = Relationship.objects.filter(
-                addressed = self.user,
-                visibility = VisibilityState.OPEN
-            )
-
-            return requester_relationships | addressed_relationships
+            return relationships
 
     def get_object(self):
         """Return the relationship by the id"""
@@ -90,26 +86,6 @@ class RelationshipViewSet(mixins.ListModelMixin,
         """Disable product."""
         instance.visibility = VisibilityState.DELETED
         instance.save()
-
-    def create(self, request, *args, **kwargs):
-        """Handle Relationship creation."""
-        relationship_serializer = CreateRelationshipSerializer(
-            data = request.data,
-            context = {'requester': self.user}
-        )
-
-        relationship_serializer.is_valid(raise_exception = True)
-        try:
-            relationship = relationship_serializer.save()
-            data = self.get_serializer(relationship).data
-            data_status = status.HTTP_201_CREATED
-        except IntegrityError:
-            data = {
-                'detail': 'Error. This relationship alredy exist.'
-            }
-            data_status = status.HTTP_409_CONFLICT
-        
-        return Response(data, status = data_status)
 
     def retrieve(self, request, *args, **kwargs):
         """Add extra data to the response."""

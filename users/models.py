@@ -185,8 +185,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 class Relationship(models.Model):
     requester = models.ForeignKey('User', models.PROTECT, related_name = 'relation_requester')
     addressed = models.ForeignKey('User', models.PROTECT, related_name = 'relation_addressed')
-    type = models.CharField(max_length=30)
-    verification = models.ForeignKey('Verification', models.PROTECT)
+    type = models.CharField(max_length=30, blank = True, null = True)
 
     visibility = models.CharField(
         max_length=20,
@@ -199,6 +198,18 @@ class Relationship(models.Model):
     class Meta:
         db_table = 'relationship'
         unique_together = (('requester','addressed'),)
+
+
+class RelationshipRequest(models.Model):
+    requester = models.ForeignKey('User', models.PROTECT, related_name = 'relation_request_requester')
+    addressed = models.ForeignKey('User', models.PROTECT, related_name = 'relation_request_addressed')
+    message = models.TextField(_("Message"), blank = True, null = True)
+    blocked = models.BooleanField(_("Indicates if the relationship was blocked"), default = False)
+    created_date = models.DateTimeField(help_text = _('date when was generated'), auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "relationshiprequest"
 
 
 class Verification(models.Model):

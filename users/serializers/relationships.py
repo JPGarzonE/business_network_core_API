@@ -17,7 +17,6 @@ from users.serializers.verifications import VerificationModelSerializer
 class RelationshipModelSerializer(serializers.ModelSerializer):
     """Relationship model serializer."""
 
-    verification = VerificationModelSerializer()
     addressed = UserNestedModelSerializer()
     requester = UserNestedModelSerializer()
 
@@ -30,8 +29,7 @@ class RelationshipModelSerializer(serializers.ModelSerializer):
             'id',
             'requester',
             'addressed',
-            'type',
-            'verification'
+            'type'
         )
 
         read_only_fields = (
@@ -49,34 +47,33 @@ class CreateRelationshipSerializer(serializers.Serializer):
 
     requires_context = True
 
-    addressed_id = serializers.CharField(
-        min_length = 1,
-        max_length = 50
-    )
-
     type = serializers.CharField(
         min_length = 1,
-        max_length = 30
+        max_length = 30,
+        required = False
     )
 
     @transaction.atomic
     def create(self, data):
         """Create new user relationship."""
         requester = self.context['requester']
-        addressed_id = data['addressed_id']
-        type = data["type"]
+        addressed = self.context['addressed']
+        
+        if not requester.is_active or not addressed.is_active:
+            raise Exception("Requester and addressed both have to be active users")
 
-        addressed = User.objects.filter(
-            id = addressed_id,
-            is_active = True
-        )
-        verification = Verification.objects.create( verified = False, state = "None" )
+        type = data.get("type")
 
-        relationship = Relationship.objects.create(
-            requester = requester,
-            addressed = addressed[0],
-            type = type,
-            verification = verification
-        )
+        if type:
+            relationship = Relationship.objects.create(
+                requester = requester,
+                addressed = addressed,
+                type = type
+            )
+        else:
+            relationship = Relationship.objects.create(
+                requester = requester,
+                addressed = addressed
+            )
 
         return relationship

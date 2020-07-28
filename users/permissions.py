@@ -32,6 +32,38 @@ class IsRelationOwner(BasePermission):
 
         return request.user == obj.requester or request.user == obj.addressed
 
+class IsRelationRequester(BasePermission):
+    """Allow access to the user requester of the relationship request"""
+
+    message = "You can't do this action. You're not the requester of the data."
+
+    def has_permission(self, request, view):
+        """Let object permission grant access"""
+        obj = view.get_object()
+
+        return self.has_object_permission(request, view, obj)
+
+    def has_object_permission(self, request, view, obj):
+        """Check object requester and request.user are the same"""
+
+        return obj.requester == request.user
+
+class IsRelationAddressed(BasePermission):
+    """Allow access to the user addressed of the relationship request"""
+
+    message = "You can't do this action. You're not the addressed user of the data."
+
+    def has_permission(self, request, view):
+        """Let object permission grant access"""
+        obj = view.get_object()
+
+        return self.has_object_permission(request, view, obj)
+
+    def has_object_permission(self, request, view, obj):
+        """Check object addressed and request.user are the same"""
+
+        return obj.addressed == request.user
+
 class UserIsVerified(BasePermission):
     """Allow acces to the account that is verified"""
 
@@ -54,3 +86,13 @@ class IsAccountOwnerOrIsAdmin(BasePermission):
         is_admin = request.user.is_staff
 
         return is_account_owner or is_admin
+
+class IsActiveClient(BasePermission):
+    """Allow access uniquely to the active client users 
+    (Where is_client attr and is_active are both true)"""
+
+    message = "You're not allowed. You're not an active client"
+
+    def has_permission(self, request, view):
+        
+        return request.user.is_client and request.user.is_active
