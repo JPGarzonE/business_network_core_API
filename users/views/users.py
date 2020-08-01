@@ -19,7 +19,13 @@ from users.models import User
 from companies.models import Company
 
 # Serializer
-from users.serializers import UserModelSerializer, UserSignupSerializer, UserLoginSerializer, AccountVerificationSerializer
+from users.serializers import (
+    UserModelSerializer,
+    UserNestedModelSerializer,
+    UserSignupSerializer, 
+    UserLoginSerializer, 
+    AccountVerificationSerializer
+)
 from companies.serializers import CompanyModelSerializer
 
 # Create your views here.
@@ -98,6 +104,20 @@ class UserViewSet(mixins.ListModelMixin,
 
         response.data = data
         return response
+
+
+class UserIdentityAPIView(APIView):
+    """User identity API view that identify and return a 
+    user according the access token in the request headers."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format = None, **kwargs):
+        """Handle HTTP get for retrieving a user according its access token"""
+        serializer = UserNestedModelSerializer( request.user )
+        data = serializer.data
+
+        return Response( data, status.HTTP_200_OK)
 
 
 class AccountVerificationAPIView(APIView):

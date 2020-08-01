@@ -8,6 +8,7 @@ from users.views import (
     SentRelationshipRequestViewSet,
     RecievedRelationshipRequestViewSet,
     RelationshipRequestViewSet,
+    UserIdentityAPIView,
     UserViewSet, 
     UserVerificationAPIView,
     UserVerificationTokenAPIView
@@ -39,6 +40,8 @@ router.register(
 urlpatterns = [
     path('users/verify/', AccountVerificationAPIView.as_view(), name = 'verify_account'),
     path('users/<username>/verification/token/', UserVerificationTokenAPIView.as_view(), name="user_verification"),
+
+    path('me/', UserIdentityAPIView.as_view(), name = 'user_me'),
     path('me/verification/', UserVerificationAPIView.as_view(), name = 'user_verification_me'),
 
     path('', include(router.urls)),
