@@ -43,7 +43,10 @@ class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(
         min_length = 2,
-        max_length = 50
+        max_length = 50,
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     category = serializers.CharField(

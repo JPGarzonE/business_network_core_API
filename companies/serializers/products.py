@@ -50,7 +50,10 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
 
     category = serializers.CharField(
         min_length = 3,
-        max_length = 60
+        max_length = 60,
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     description = serializers.CharField(
