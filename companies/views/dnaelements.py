@@ -26,6 +26,7 @@ class DnaelementViewSet(mixins.ListModelMixin,
     """Dnaelement view set"""
 
     serializer_class = DnaelementModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""

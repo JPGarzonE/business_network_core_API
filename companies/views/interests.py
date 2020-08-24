@@ -25,6 +25,7 @@ class InterestViewSet(mixins.ListModelMixin,
     """Interest view set"""
 
     serializer_class = InterestModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""

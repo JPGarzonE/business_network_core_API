@@ -47,6 +47,9 @@ THIRD_PARTY_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     
+    # Swagger
+    'drf_yasg',
+    
     # Storages
     'storages',
 ]
@@ -180,6 +183,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'DEFAULT_SCHEMA_CLASS':'rest_framework.schemas.coreapi.AutoSchema',
     'PAGE_SIZE': 10,
     'SEARCH_PARAM': 'q',
 }

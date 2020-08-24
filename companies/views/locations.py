@@ -25,6 +25,7 @@ class LocationViewSet(mixins.ListModelMixin,
     """Location view set"""
 
     serializer_class = LocationModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""

@@ -25,6 +25,7 @@ class ProductViewSet(mixins.ListModelMixin,
     """Product view set"""
 
     serializer_class = ProductModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""

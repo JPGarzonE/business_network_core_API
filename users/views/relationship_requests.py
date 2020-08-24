@@ -193,14 +193,13 @@ class RelationshipRequestViewSet(mixins.ListModelMixin,
     an external user (user that's not the target)"""
 
     serializer_class = RelationshipRequestModelSerializer
+    target_user = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verify that the user exists"""
         target_user_id = kwargs['target_user_id']
-        print("dispatch")
-        print(target_user_id)
         self.target_user = get_object_or_404(User, id = target_user_id)
-        print(self.target_user)
+
         return super(RelationshipRequestViewSet, self).dispatch(request, *args, **kwargs)
 
     def get_permissions(self):

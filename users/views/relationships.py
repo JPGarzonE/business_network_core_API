@@ -30,6 +30,7 @@ class RelationshipViewSet(mixins.ListModelMixin,
     """Relationship view set"""
 
     serializer_class = RelationshipModelSerializer
+    user = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the user exists"""

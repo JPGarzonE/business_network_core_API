@@ -25,6 +25,7 @@ class ServiceViewSet(mixins.ListModelMixin,
     """Service view set"""
 
     serializer_class = ServiceModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""

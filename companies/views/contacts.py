@@ -25,6 +25,7 @@ class ContactViewSet(mixins.ListModelMixin,
     """Contact view set."""
 
     serializer_class = ContactModelSerializer
+    company = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""
