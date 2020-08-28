@@ -7,6 +7,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 # Permissions
 from rest_framework.permissions import (
     AllowAny,
@@ -66,9 +70,20 @@ class UserViewSet(mixins.ListModelMixin,
             is_active = True
         )
 
+
+    @swagger_auto_schema( operation_id = "Signup", tags = ["Authentication"], request_body = UserSignupSerializer,
+        responses = { 201: openapi.Response( "User created", UserModelSerializer, examples = {
+                "application/json" : [ {"user": "UserObject", "access_token": "string"} ]
+            }), 
+            400: openapi.Response("Bad request", examples = {"application/json": [
+                {"password_confirmation": ["This field is required"], "company": {"nit": ["company with this nit alredy exist"]},
+                "non_field_errors": ["las contraseñas no concuerdan"] }
+            ]})
+        }, security = [{ "Anonymous": [] }])
     @action(detail = False, methods = ['post'])
     def signup(self, request):
-        """User signup."""
+        """Endpoint for signup a user in the system.
+        It returns the user created and the access_token to access inmediately."""
         serializer = UserSignupSerializer( data = request.data )
         serializer.is_valid( raise_exception = True )   
         user, token = serializer.save()
@@ -80,9 +95,18 @@ class UserViewSet(mixins.ListModelMixin,
 
         return Response( data, status = status.HTTP_201_CREATED )
 
+
+    @swagger_auto_schema( operation_id = "Login", tags = ["Authentication"], request_body = UserLoginSerializer,
+        responses = { 201: openapi.Response( "User authenticated", UserModelSerializer, examples = {
+                "application/json" : [ {"user": "UserObject", "access_token": "string"} ]
+            }), 
+            400: openapi.Response("Bad request", examples = {"application/json": [
+                {"non_field_errors": ["Invalid credentials"] }
+            ]})
+        }, security = [{ "Anonymous": [] }])
     @action(detail=False, methods=['post'])
     def login(self, request):
-        """User login."""
+        """Endpoint for authenticate a user in the system. Return an access_token for grant future access."""
         serializer = UserLoginSerializer( data = request.data )
         serializer.is_valid( raise_exception = True )
         user, token = serializer.save()

@@ -30,6 +30,7 @@
         {% endblock %}
 
         <div id="redoc-placeholder"></div>
+        <div class="black-slider"></div>
 
         {% block footer %}
             {# -- Add any footer markup here (rendered AFTER the swagger-ui/redoc element) -- #}
@@ -46,5 +47,26 @@
         {% block extra_scripts %}
             {# -- Add any additional scripts here -- #}
         {% endblock %}
+
+        <!-- styles fix -->
+        <style>
+            .black-slider {
+                position: fixed;
+                top: 0px;
+                bottom: 0px;
+                right: 0px;
+                width: calc((100% - 260px) * 0.4);
+                background: rgb(38, 50, 56);
+            }
+
+            .menu-content {
+                position: fixed;
+            }
+
+            .api-content {
+                position: absolute;
+                right: 0px;
+            }
+        </style>
     </body>
 </html>

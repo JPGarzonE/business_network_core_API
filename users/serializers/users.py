@@ -20,7 +20,7 @@ from users.models import Verification
 from multimedia.models import Document
 
 # Serializers
-from companies.serializers import CompanyModelSerializer
+from companies.serializers import CompanyModelSerializer, SignupCompanyModelSerializer
 from users.serializers.verifications import VerificationModelSerializer
 
 # Send email
@@ -28,7 +28,9 @@ from users.serializers.verifications import send_verification_notification_email
 
 # Utils
 from datetime import timedelta
+from django.utils.translation import ugettext_lazy as _
 import jwt
+
 
 class UserModelSerializer(serializers.ModelSerializer):
 
@@ -36,7 +38,7 @@ class UserModelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'is_verified', 'is_staff', 'company', )
+        fields = ('id', 'username', 'email', 'full_name', 'is_verified', 'is_staff', 'company', )
 
 class UserNestedModelSerializer(serializers.ModelSerializer):
 
@@ -53,7 +55,9 @@ class UserSignupSerializer(serializers.Serializer):
         validators = [ UniqueValidator( queryset = User.objects.all() ) ]
     )
 
-    company = CompanyModelSerializer()
+    full_name = serializers.CharField(help_text = _("Complete real name of the user"))
+
+    company = SignupCompanyModelSerializer()
 
     comercial_certificate_id = serializers.IntegerField(required = False)
 

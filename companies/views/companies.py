@@ -5,6 +5,9 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+
 # Serializers
 from companies.serializers import CompanyModelSerializer, UpdateCompanySerializer
 

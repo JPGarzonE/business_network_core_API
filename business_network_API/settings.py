@@ -230,3 +230,20 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 DEFAULT_FROM_EMAIL = 'api.conecty@gmail.com'
+
+# Documentatio Settings
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+       'Anonymous': {
+           'type': 'basic',
+           'description': 'When there are no token credentials'
+       },
+
+      'api_key': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': 'Needs to send a berar token in the Authorization Headers. (Is provided by the login or signup endpoints)'
+      }
+   }
+}

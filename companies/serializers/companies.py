@@ -53,6 +53,25 @@ class CompanyModelSerializer(serializers.ModelSerializer):
             'role', 'priority', 'web_url', 'description')
 
 
+class SignupCompanyModelSerializer(serializers.ModelSerializer):
+
+    name = serializers.CharField(
+        max_length=60,
+        validators=[UniqueValidator(queryset=Company.objects.all())]
+    )
+
+    nit = RegexValidator(
+        regex = r'(\d{9,9}((.)\d)?)',
+        message = "El nit debe estar acorde al formato de la registraduria"
+    )
+
+    industry = serializers.CharField(max_length=60)
+
+    class Meta:
+        model = Company
+        fields = ('id', 'name', 'nit', 'industry')
+
+
 class UpdateCompanySerializer(serializers.ModelSerializer):
     """Update a company"""
 

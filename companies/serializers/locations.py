@@ -97,7 +97,8 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
 
     media = MediaModelSerializer( required = False )
 
-    principal = serializers.BooleanField( required = False )
+    principal = serializers.BooleanField( required = False,
+        help_text = "Attribute to indicate if its the main location of a user (Company)")
 
     @transaction.atomic
     def create(self, data):
