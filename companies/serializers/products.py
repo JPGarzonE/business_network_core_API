@@ -26,7 +26,10 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'company',
             'category',
             'name',
-            'price',
+            'minimum_price',
+            'maximum_price',
+            'tariff_heading',
+            'minimum_purchase',
             'description',
             'media'
         )
@@ -63,7 +66,28 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         allow_blank = True
     )
 
-    price = serializers.CharField(
+    minimum_price = serializers.CharField(
+        min_length = 0,
+        max_length = 20,
+        required = False,
+        allow_null = True
+    )
+
+    maximum_price = serializers.CharField(
+        min_length = 0,
+        max_length = 20,
+        required = False,
+        allow_null = True
+    )
+
+    tariff_heading = serializers.CharField(
+        min_length = 0,
+        max_length = 20,
+        required = False,
+        allow_null = True
+    )
+
+    minimum_purchase = serializers.CharField(
         min_length = 0,
         max_length = 20,
         required = False,
@@ -81,7 +105,10 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             'id',
             'category',
             'name',
-            'price',
+            'minimum_price',
+            'maximum_price',
+            'tariff_heading',
+            'minimum_purchase',
             'description',
             'media_id'
         )
@@ -115,7 +142,7 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         """
-            Cutomize the update function for the serializer to update the
+            Customize the update function for the serializer to update the
             related_field values.
         """
         media = None
@@ -124,7 +151,7 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             media_id = validated_data.pop('media_id')
             media = Media.objects.get( id = media_id )
             
-            if media :
+            if media:
                 instance.media = media
 
         product_updated = super().update(instance, validated_data)     

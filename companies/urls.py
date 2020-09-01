@@ -53,14 +53,23 @@ router.register(
     basename = 'interest'
 )
 
+router.register(
+    'companies/(?P<username>[\w.]+)/certificates',
+    CompanyCertificateViewSet,
+    basename = 'certificates'
+)
+
 urlpatterns = [
     path('', include(router.urls)),
 
+    path('certificates/<int:pk>/', CertificateDetailView.as_view()),
+
     path('companies/<username>/relationships/unregistered/', ListUnregisteredRelationships.as_view()),
+
+    path('dnaelements/<int:pk>/', DnaelementDetailView.as_view()),
 
     path('products/<int:pk>/', ProductDetailView.as_view()),
 
     path('services/<int:pk>/', ServiceDetailView.as_view()),
 
-    path('dnaelements/<int:pk>/', DnaelementDetailView.as_view()),
 ]

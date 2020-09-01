@@ -1,3 +1,4 @@
+from .certificates import CompanyCertificateViewSet, CertificateDetailView
 from .companies import *
 from .contacts import *
 from .dnaelements import *

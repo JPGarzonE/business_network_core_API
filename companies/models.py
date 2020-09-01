@@ -13,6 +13,16 @@ from multimedia.models import Media
 # Utils
 from enum import Enum
 
+class Certificate(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=60)
+    description = models.CharField(max_length=155, blank=True, null=True)
+    image = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+
+    class Meta:
+        db_table = 'certification'
+
+
 class Company(models.Model):
     id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete = models.PROTECT)
@@ -20,10 +30,10 @@ class Company(models.Model):
     name = models.CharField(max_length=60)
     role = models.CharField(max_length=50, blank=True, null=True)
     priority = models.CharField(max_length=50, blank=True, null=True)
-    logo = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
+    logo = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
     industry = models.CharField(max_length=60)
     web_url = models.CharField(max_length=150, blank=True, null=True)
-    description = models.CharField(max_length=150, blank=True, null=True)
+    description = models.CharField(max_length=155, blank=True, null=True)
     
     visibility = models.CharField(
         max_length=20,
@@ -37,9 +47,27 @@ class Company(models.Model):
         db_table = 'company'
 
 
+class CompanyCertificate(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    company = models.OneToOneField(Company, models.PROTECT)
+    certificate = models.ForeignKey(Certificate, on_delete=models.PROTECT)
+
+    visibility = models.CharField(
+        max_length=20,
+        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
+        default = VisibilityState.OPEN.value,
+        null=False,
+        blank=False,
+    )
+
+    class Meta:
+        db_table = 'companycertificate'
+        unique_together = (('company', 'certificate'),)
+
+
 class CompanySocialnetwork(models.Model):
     company = models.OneToOneField(Company, models.PROTECT, primary_key=True)
-    social_network = models.ForeignKey('Socialnetwork', models.PROTECT)
+    social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
     class Meta:
         db_table = 'companysocialnetwork'
@@ -69,7 +97,7 @@ class Dnaelement(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=45)
     category = models.CharField(max_length=45)
-    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
     description = models.CharField(max_length=155, blank=True, null=True)
 
@@ -108,7 +136,7 @@ class Employee(models.Model):
 
 class EmployeeSocialnetwork(models.Model):
     employee = models.OneToOneField(Employee, models.PROTECT, primary_key=True)
-    social_network = models.ForeignKey('Socialnetwork', models.PROTECT)
+    social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
     class Meta:
         db_table = 'employeesocialnetwork'
@@ -120,7 +148,7 @@ class ImportantEvent(models.Model):
     source_url = models.CharField(max_length=150, blank=True, null=True)
     name = models.CharField(max_length=45)
     description = models.CharField(max_length=155, blank=True, null=True)
-    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT, db_column='Company_id')  # Field name made lowercase.
 
     visibility = models.CharField(
@@ -164,7 +192,7 @@ class Location(models.Model):
     zip = models.CharField(max_length=45, blank=True, null=True)
     principal = models.BooleanField(default = False)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -181,11 +209,13 @@ class Location(models.Model):
 class Product(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
-    price = models.CharField(max_length=20, blank=True, null=True)
     category = models.CharField(max_length=60)
+    minimum_price = models.CharField(max_length=20, blank=True, null=True)
+    maximum_price = models.CharField(max_length=20, blank=True, null=True)
+    tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
+    minimum_purchase = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -199,6 +229,26 @@ class Product(models.Model):
         db_table = 'product'
 
 
+class ProductCertificate(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    product = models.OneToOneField(Product, models.PROTECT)
+    certificate = models.ForeignKey(Certificate, on_delete=models.PROTECT)
+
+    class Meta:
+        db_table = 'productcertificate'
+        unique_together = (('product', 'certificate'),)
+
+
+class ProductMedia(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    product = models.OneToOneField(Product, models.PROTECT)
+    media = models.ForeignKey(Media, models.CASCADE)
+
+    class Meta:
+        db_table = 'productmedia'
+        unique_together = (('product', 'media'),)
+
+
 class Service(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
@@ -206,7 +256,7 @@ class Service(models.Model):
     category = models.CharField(max_length=60)
     description = models.CharField(max_length=155, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey(Media, models.PROTECT, blank=True, null=True)
+    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -222,11 +272,9 @@ class Service(models.Model):
 
 class Socialnetwork(models.Model):
     id = models.BigAutoField(primary_key=True)
-    type = models.CharField(max_length=45, blank=True, null=True)
+    name = models.CharField(max_length=45, blank=True, null=True)
     username = models.CharField(max_length=45, blank=True, null=True)
-    url = models.CharField(max_length=150, blank=True, null=True)
-    privacy = models.CharField(max_length=9, blank=True, null=True)
-    profile_image_url = models.CharField(max_length=150, blank=True, null=True)
+    profile_url = models.CharField(max_length=150, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,

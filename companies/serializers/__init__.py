@@ -1,3 +1,4 @@
+from .certificates import *
 from .companies import *
 from .contacts import *
 from .dnaelements import *

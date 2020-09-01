@@ -9,6 +9,7 @@ from django.db import transaction
 # Models
 from companies.models import Contact
 
+
 class ContactModelSerializer(serializers.ModelSerializer):
     """Contact model serializer."""
 
