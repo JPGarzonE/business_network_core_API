@@ -80,7 +80,7 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
 
     def perform_destroy(self, instance):
         """Disable membership."""
-        instance.visibility = 'Deleted'
+        instance.visibility = VisibilityState.DELETE.value
         instance.save()
 
     def partial_update(self, request, *args, **kwargs):

@@ -7,14 +7,19 @@ from django.db import transaction
 from rest_framework import serializers
 
 # Models
-from companies.models import Product
+from companies.models import Certificate, Product, ProductCertificate, ProductMedia
 from multimedia.models import Media
+
+# Serializers
+from companies.serializers import CertificateModelSerializer
 from multimedia.serializers.media import MediaModelSerializer
+
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
 
-    media = MediaModelSerializer()
+    certificates = CertificateModelSerializer(many = True)
+    media = MediaModelSerializer(many = True)
 
     class Meta:
         """Product meta class."""
@@ -31,12 +36,12 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'tariff_heading',
             'minimum_purchase',
             'description',
+            'certificates',
             'media'
         )
 
         read_only_fields = (
-            'company'
-            'media',
+            'company',
         )
 
 
@@ -89,12 +94,20 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
 
     minimum_purchase = serializers.CharField(
         min_length = 0,
-        max_length = 20,
-        required = False,
-        allow_null = True
+        max_length = 20
     )
 
-    media_id = serializers.IntegerField(required = False)
+    certificates = serializers.ListField(
+        child = serializers.IntegerField(),
+        required = False,
+        help_text = "Array with the ids of the certificates (previously uploaded)"
+    )
+
+    media = serializers.ListField(
+        child = serializers.IntegerField(),
+        required = False,
+        help_text = "Array with the ids of the media (previously uploaded)"
+    )
 
     class Meta:
         """Product meta class."""
@@ -110,32 +123,40 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             'tariff_heading',
             'minimum_purchase',
             'description',
-            'media_id'
+            'certificates',
+            'media'
         )
 
         read_only_fields = (
             'id',
-            'media_id',
+            'certificates',
+            'media',
         )
 
     @transaction.atomic
     def create(self, data):
         """Create new company product."""
         company = self.context['company']
-        media = None
+        if 'media' in data:
+            media = data.pop('media')
 
-        if( data.get('media_id') ):
-            media_id = data.pop("media_id")
-            media = Media.objects.get( id = media_id )
+        if 'certificates' in data:
+            certificates = data.pop('certificates')
 
         product = Product.objects.create(
             company = company,
             **data
         )
 
-        if media:
-            product.media = media
-            product.save()
+        if media and product:
+            for media_id in media:
+                media_object = Media.objects.get( id = media_id )
+                ProductMedia.objects.create( product = product, media = media_object )
+        
+        if certificates and product:
+            for certificate_id in certificates:
+                certificate_object = Certificate.objects.get( id = certificate_id )
+                ProductCertificate.objects.create( product = product, certificates = certificate_object )
 
         return product
 
@@ -145,14 +166,20 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             Customize the update function for the serializer to update the
             related_field values.
         """
-        media = None
 
-        if 'media_id' in validated_data :
-            media_id = validated_data.pop('media_id')
-            media = Media.objects.get( id = media_id )
-            
-            if media:
-                instance.media = media
+        if 'media' in validated_data:
+            media = validated_data.pop('media')
+
+            for media_id in media:
+                media_object = Media.objects.get( id = media_id )
+                ProductMedia.objects.create( product = instance, media = media_object )
+        
+        if 'certificates' in validated_data:
+            certificates = validated_data.pop('certificates')
+
+            for certificate_id in certificates:
+                certificate_object = Certificate.objects.get( id = certificate_id )
+                ProductCertificate.objects.create( product = instance, certificates = certificate_object )
 
         product_updated = super().update(instance, validated_data)     
 

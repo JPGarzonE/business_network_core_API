@@ -38,7 +38,7 @@ class Company(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -85,7 +85,7 @@ class Contact(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -104,7 +104,7 @@ class Dnaelement(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -125,7 +125,7 @@ class Employee(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -154,7 +154,7 @@ class ImportantEvent(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -174,7 +174,7 @@ class Interest(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -197,7 +197,7 @@ class Location(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -209,18 +209,21 @@ class Location(models.Model):
 class Product(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
+    company = models.ForeignKey(Company, models.PROTECT)
     category = models.CharField(max_length=60)
     minimum_price = models.CharField(max_length=20, blank=True, null=True)
     maximum_price = models.CharField(max_length=20, blank=True, null=True)
     tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
     minimum_purchase = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
-    company = models.ForeignKey(Company, models.PROTECT)
+
+    certificates = models.ManyToManyField(Certificate, through = "ProductCertificate")
+    media = models.ManyToManyField(Media, through = "ProductMedia")
 
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -261,7 +264,7 @@ class Service(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -279,7 +282,7 @@ class Socialnetwork(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -327,7 +330,7 @@ class UnregisteredRelationship(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )

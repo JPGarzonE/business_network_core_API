@@ -7,12 +7,16 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# Django
+from django.db import transaction
+from django.utils.decorators import method_decorator
+
 # Documentation
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
-from companies.models import Company, Product, VisibilityState
+from companies.models import Company, Product, ProductCertificate, ProductMedia, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -21,6 +25,16 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 # Serializers
 from companies.serializers import ProductModelSerializer, HandleCompanyProductSerializer
 
+@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List products", tags = ["Products"],
+    operation_description = "Endpoint to list all the products of a company",
+    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+))
+@method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
+        operation_description = "Endpoint to delete a certificate by its id",
+        responses = { 204: {}, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+        }, security = [{ "api_key": [] }]
+))
 class ProductViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
@@ -71,13 +85,37 @@ class ProductViewSet(mixins.ListModelMixin,
 
         return product
 
+    @transaction.atomic
     def perform_destroy(self, instance):
         """Disable product."""
-        instance.visibility = VisibilityState.DELETED
+        instance.visibility = VisibilityState.DELETED.value
+
+        product_certificates = ProductCertificate.objects.filter( product = instance )
+        product_media = ProductMedia.objects.filter( product = instance )
+
+        for certificate in product_certificates:
+            certificate.delete()
+            
+        for media in product_media:
+            media.delete()
+
         instance.save()
 
+    @swagger_auto_schema( tags = ["Products"], request_body = HandleCompanyProductSerializer,
+        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"minimum_purchase": ["This field may not be null"]} 
+            })
+        }, security = [{ "api_key": [] }])
     def create(self, request, *args, **kwargs):
-        """Handle Product creation."""
+        """Create product\n
+            Endpoint to create a product.\n 
+            To append complementary data (like certificates or media) to a product you have 
+            to append a list with the ids ([189, 243, 2]) of the objects previosuly uploaded,
+            this lists are appended in the fields 'certificates' and 'media' respectively. (Request Body below)
+        """
+
         product_serializer = HandleCompanyProductSerializer(
             data = request.data,
             context = {'company': self.company}
@@ -90,9 +128,20 @@ class ProductViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
+    @swagger_auto_schema( tags = ["Products"], request_body = HandleCompanyProductSerializer,
+        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"name": ["This field may not be null"]} 
+            })
+        }, security = [{ "api_key": [] }])
     def partial_update(self, request, *args, **kwargs):
-        """Handle product partial update and add a 
-        media to a product by its id if its the case"""
+        """Partial update a product\n
+            Endpoint to update partially a product.\n 
+            When some object id is added in certificates or media, those objects are
+            going to be added to the existing ones, not overwritten. To delete a certificate or 
+            a media do it through the ProductCertificate or ProductMedia delete endpoints
+        """
         instance = self.get_object()
         product_serializer = HandleCompanyProductSerializer(
             instance = instance,
@@ -114,10 +163,12 @@ class ProductDetailView(APIView):
         Retrieve the detail of a product.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
+    @swagger_auto_schema( operation_id = "Retrieve a product", tags = ["Products"],
+        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
     def get(self, request, pk, format = None):
-        """Return the product by the id"""
+        """Endpoint to retrieve the product by the id"""
         product = self.get_object(pk)
         serializer = ProductModelSerializer(product)
 

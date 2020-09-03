@@ -40,7 +40,7 @@ class Deal(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -193,7 +193,7 @@ class Relationship(models.Model):
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN,
+        default = VisibilityState.OPEN.value,
         null=False,
         blank=False,
     )
@@ -229,7 +229,7 @@ class Verification(models.Model):
     state = models.CharField(
         max_length=15,
         choices = [(stateOption, stateOption.value) for stateOption in States],
-        default = States.NONE,
+        default = States.NONE.value,
         null=False,
         blank=False,
     )
