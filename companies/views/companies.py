@@ -52,7 +52,7 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
         else:
             company_filter = Company.objects.all()
 
-        return company_filter.exclude( visibility = VisibilityState.DELETED )
+        return company_filter.exclude( visibility = VisibilityState.DELETED.value )
 
     def get_account_entity(self):
         """Return the entity father of the data."""
@@ -72,7 +72,7 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
         company = get_object_or_404(
             Company,
             user__username = self.kwargs['username'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
         self.company = company
         
@@ -85,18 +85,22 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
 
     def partial_update(self, request, *args, **kwargs):
         """Handle company partial update and add a 
-        media to a company logo by its id if its the case"""
-        instance = self.get_object()
-        company_serializer = UpdateCompanySerializer(
-            instance = instance,
-            data = request.data,
-            partial = True
-        )
+        image to a company logo by its id if its the case"""
+        try:
+            instance = self.get_object()
+            company_serializer = UpdateCompanySerializer(
+                instance = instance,
+                data = request.data,
+                partial = True
+            )
 
-        company_serializer.is_valid(raise_exception = True)
-        company = company_serializer.save()
+            company_serializer.is_valid(raise_exception = True)
+            company = company_serializer.save()
 
-        data = self.get_serializer(company).data
-        data_status = status.HTTP_200_OK
+            data = self.get_serializer(company).data
+            data_status = status.HTTP_200_OK
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)

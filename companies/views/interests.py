@@ -54,7 +54,7 @@ class InterestViewSet(mixins.ListModelMixin,
         """Return company Interests"""
         return Interest.objects.filter(
             company = self.company,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
     def get_object(self):
@@ -62,14 +62,14 @@ class InterestViewSet(mixins.ListModelMixin,
         interest = get_object_or_404(
             Interest,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return interest
 
     def perform_destroy(self, instance):
         """Disable Interest."""
-        instance.visibility = VisibilityState.DELETED
+        instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
     def create(self, request, *args, **kwargs):

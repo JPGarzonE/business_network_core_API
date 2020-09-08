@@ -11,23 +11,25 @@ from django.db import transaction
 
 # Models
 from users.models import User
-from multimedia.models import Media
+from multimedia.models import Image
 
 # Storages
 from multimedia.storages import VideoStorage, ImageStorage
 
-class MediaModelSerializer(serializers.ModelSerializer):
-    """Media model serializer."""
+
+class ImageModelSerializer(serializers.ModelSerializer):
+    """Image model serializer."""
 
     path = serializers.SerializerMethodField()
 
     class Meta:
-        """Media meta class."""
+        """Image meta class."""
 
-        model = Media
+        model = Image
 
         fields = (
             'id',
+            'user',
             'name',
             'path',
             'width',
@@ -55,6 +57,7 @@ class MediaModelSerializer(serializers.ModelSerializer):
 
         return image_storage.url(image_path)
 
+
 class CreateImageSerializer(serializers.Serializer):
     """
     Serializer in charge of creating the images in the bucket 
@@ -62,11 +65,13 @@ class CreateImageSerializer(serializers.Serializer):
     """
 
     requires_context = True
+    
     image = serializers.ImageField(required = True, allow_empty_file = False)
 
     @transaction.atomic
     def create(self, data):
         """Create and store a new image"""
+        user = self.context['user']
         image_object = data.get("image")
         
         image_size = image_object.size # size in bytes
@@ -75,7 +80,8 @@ class CreateImageSerializer(serializers.Serializer):
 
         _, image_extension = os.path.splitext(image_object.name)
 
-        image = Media.objects.create(
+        image = Image.objects.create(
+            user = user,
             width = image_width,
             height = image_height,
             size = image_size,
@@ -84,7 +90,7 @@ class CreateImageSerializer(serializers.Serializer):
         image_id = image.id
 
         bucket_directory = '{username}/{image_object_id}/'.format( 
-            username = self.context['user'],
+            username = user.username,
             image_object_id = image_id
         )
         

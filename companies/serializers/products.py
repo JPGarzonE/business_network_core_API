@@ -2,24 +2,25 @@
 
 # Django
 from django.db import transaction
+from django.db.utils import IntegrityError
 
 # Django rest framework
 from rest_framework import serializers
 
 # Models
-from companies.models import Certificate, Product, ProductCertificate, ProductMedia
-from multimedia.models import Media
+from companies.models import Certificate, Product, ProductCertificate, ProductImage
+from multimedia.models import Image
 
 # Serializers
 from companies.serializers import CertificateModelSerializer
-from multimedia.serializers.media import MediaModelSerializer
+from multimedia.serializers.images import ImageModelSerializer
 
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
 
     certificates = CertificateModelSerializer(many = True)
-    media = MediaModelSerializer(many = True)
+    images = ImageModelSerializer(many = True)
 
     class Meta:
         """Product meta class."""
@@ -37,7 +38,7 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'minimum_purchase',
             'description',
             'certificates',
-            'media'
+            'images'
         )
 
         read_only_fields = (
@@ -103,10 +104,10 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         help_text = "Array with the ids of the certificates (previously uploaded)"
     )
 
-    media = serializers.ListField(
+    images = serializers.ListField(
         child = serializers.IntegerField(),
         required = False,
-        help_text = "Array with the ids of the media (previously uploaded)"
+        help_text = "Array with the ids of the images (previously uploaded)"
     )
 
     class Meta:
@@ -124,21 +125,24 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             'minimum_purchase',
             'description',
             'certificates',
-            'media'
+            'images'
         )
 
         read_only_fields = (
             'id',
             'certificates',
-            'media',
+            'images',
         )
 
     @transaction.atomic
     def create(self, data):
         """Create new company product."""
         company = self.context['company']
-        if 'media' in data:
-            media = data.pop('media')
+        images = None
+        certificates = None
+
+        if 'images' in data:
+            images = data.pop('images')
 
         if 'certificates' in data:
             certificates = data.pop('certificates')
@@ -148,17 +152,32 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             **data
         )
 
-        if media and product:
-            for media_id in media:
-                media_object = Media.objects.get( id = media_id )
-                ProductMedia.objects.create( product = product, media = media_object )
+        if images and product:
+            for idx, image_id in enumerate(images):
+                try:
+                    image_object = Image.objects.get( id = image_id )
+                except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in images[{}]".format(idx) )
+                
+                try:
+                    ProductImage.objects.create( product = product, image = image_object )
+                except IntegrityError:
+                    raise Exception( "The image with id provided in images[{}] is repeated".format(idx) )
         
         if certificates and product:
-            for certificate_id in certificates:
-                certificate_object = Certificate.objects.get( id = certificate_id )
-                ProductCertificate.objects.create( product = product, certificates = certificate_object )
+            for idx, certificate_id in enumerate(certificates):
+                try:
+                    certificate_object = Certificate.objects.get( id = certificate_id )
+                except Certificate.DoesNotExist:
+                    raise Exception( "Theres no certificate with the id provided in certificates[{}]".format(idx) )
+
+                try:
+                    ProductCertificate.objects.create( product = product, certificate = certificate_object )
+                except IntegrityError:
+                    raise Exception( "The certificate with id provided in certificates[{}] is repeated".format(idx) )
 
         return product
+
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -167,19 +186,33 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             related_field values.
         """
 
-        if 'media' in validated_data:
-            media = validated_data.pop('media')
+        if 'images' in validated_data:
+            images = validated_data.pop('images')
 
-            for media_id in media:
-                media_object = Media.objects.get( id = media_id )
-                ProductMedia.objects.create( product = instance, media = media_object )
+            for idx, image_id in enumerate(images):
+                try:
+                    image_object = Image.objects.get( id = image_id )
+                except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in images[{}]".format(idx) )
+
+                try:
+                    ProductImage.objects.create( product = instance, image = image_object )
+                except IntegrityError:
+                    raise Exception( "The image with id provided in images[{}] is alredy in this product".format(idx) )
         
         if 'certificates' in validated_data:
             certificates = validated_data.pop('certificates')
 
-            for certificate_id in certificates:
-                certificate_object = Certificate.objects.get( id = certificate_id )
-                ProductCertificate.objects.create( product = instance, certificates = certificate_object )
+            for idx, certificate_id in enumerate(certificates):
+                try:
+                    certificate_object = Certificate.objects.get( id = certificate_id )
+                except Certificate.DoesNotExist:
+                    raise Exception( "Theres no certificate with the id provided in certificates[{}]".format(idx) )
+
+                try:
+                    ProductCertificate.objects.create( product = instance, certificate = certificate_object )
+                except IntegrityError:
+                    raise Exception( "The certificate with id provided in certificates[{}] is alredy in this product".format(idx) )
 
         product_updated = super().update(instance, validated_data)     
 

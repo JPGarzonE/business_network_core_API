@@ -24,8 +24,7 @@ class InterestModelSerializer(serializers.ModelSerializer):
         )
 
         read_only_fields = (
-            'company'
-            'media',
+            'company',
         )
 
 

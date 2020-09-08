@@ -55,7 +55,7 @@ class DnaelementViewSet(mixins.ListModelMixin,
         """Return company Dnaelements"""
         return Dnaelement.objects.filter(
             company = self.company,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
     def get_object(self):
@@ -63,45 +63,53 @@ class DnaelementViewSet(mixins.ListModelMixin,
         dnaelement = get_object_or_404(
             Dnaelement,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return dnaelement
 
     def perform_destroy(self, instance):
         """Disable Dnaelement."""
-        instance.visibility = VisibilityState.DELETED
+        instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
     def create(self, request, *args, **kwargs):
         """Handle Dnaelement creation."""
-        dnaelement_serializer = HandleCompanyDnaelementSerializer(
-            data = request.data,
-            context = {'company': self.company}
-        )
-        dnaelement_serializer.is_valid(raise_exception = True)
-        dnaelement = dnaelement_serializer.save()
+        try:
+            dnaelement_serializer = HandleCompanyDnaelementSerializer(
+                data = request.data,
+                context = {'company': self.company}
+            )
+            dnaelement_serializer.is_valid(raise_exception = True)
+            dnaelement = dnaelement_serializer.save()
 
-        data = self.get_serializer(dnaelement).data
-        data_status = status.HTTP_201_CREATED
+            data = self.get_serializer(dnaelement).data
+            data_status = status.HTTP_201_CREATED
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
 
     def partial_update(self, request, *args, **kwargs):
         """Handle dna partial update and add a 
-        media to a dna by its id if its the case"""
-        instance = self.get_object()
-        dna_serializer = HandleCompanyDnaelementSerializer(
-            instance = instance,
-            data = request.data,
-            partial = True
-        )
+        image to a dna by its id if its the case"""
+        try:
+            instance = self.get_object()
+            dna_serializer = HandleCompanyDnaelementSerializer(
+                instance = instance,
+                data = request.data,
+                partial = True
+            )
 
-        dna_serializer.is_valid(raise_exception = True)
-        dna = dna_serializer.save()
+            dna_serializer.is_valid(raise_exception = True)
+            dna = dna_serializer.save()
 
-        data = self.get_serializer(dna).data
-        data_status = status.HTTP_201_CREATED
+            data = self.get_serializer(dna).data
+            data_status = status.HTTP_201_CREATED
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
 
@@ -124,7 +132,7 @@ class DnaelementDetailView(APIView):
         dnaelement = get_object_or_404(
             Dnaelement,
             id = pk,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return dnaelement

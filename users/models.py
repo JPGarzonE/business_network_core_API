@@ -14,19 +14,16 @@ from django.core.mail import send_mail
 # Django timezone
 from django.utils import timezone
 
-# Models
-from multimedia.models import Document, Media
-
 # Utils
 from enum import Enum
 
 
 # Enum for entitites visibility
 class VisibilityState(Enum):
-    PRIVATE = 'Private'
-    OPEN = 'Open'
-    PERSONALIZED = 'Personalized'
-    DELETED = 'Deleted'
+    PRIVATE = 'PRIVATE'
+    OPEN = 'OPEN'
+    PERSONALIZED = 'PERSONALIZED'
+    DELETED = 'DELETED'
 
 
 class Deal(models.Model):
@@ -116,6 +113,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     Custom user for the platform, without username,
     first_name and last_name.
     """
+    id = models.BigAutoField(primary_key=True)
     
     email = models.EmailField(unique=True)
 
@@ -204,6 +202,7 @@ class Relationship(models.Model):
 
 
 class RelationshipRequest(models.Model):
+    id = models.BigAutoField(primary_key=True)
     requester = models.ForeignKey('User', models.PROTECT, related_name = 'relation_request_requester')
     addressed = models.ForeignKey('User', models.PROTECT, related_name = 'relation_request_addressed')
     message = models.TextField(_("Message"), blank = True, null = True)

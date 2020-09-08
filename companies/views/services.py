@@ -54,7 +54,7 @@ class ServiceViewSet(mixins.ListModelMixin,
         """Return company services"""
         return Service.objects.filter(
             company = self.company,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
     def get_object(self):
@@ -62,14 +62,14 @@ class ServiceViewSet(mixins.ListModelMixin,
         service = get_object_or_404(
             Service,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return service
 
     def perform_destroy(self, instance):
         """Disable service."""
-        instance.visibility = VisibilityState.DELETED
+        instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
     def create(self, request, *args, **kwargs):
@@ -88,7 +88,7 @@ class ServiceViewSet(mixins.ListModelMixin,
 
     def partial_update(self, request, *args, **kwargs):
         """Handle product partial update and add a 
-        media to a product by its id if its the case"""
+        image to a service by its id if its the case"""
         instance = self.get_object()
         service_serializer = HandleCompanyServiceSerializer(
             instance = instance,
@@ -123,7 +123,7 @@ class ServiceDetailView(APIView):
         service = get_object_or_404(
             Service,
             id = pk,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return service

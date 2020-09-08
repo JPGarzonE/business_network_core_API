@@ -70,6 +70,10 @@ urlpatterns = [
 
     path('products/<int:pk>/', ProductDetailView.as_view()),
 
+    path('products/<int:product_id>/certificates/<int:certificate_id>/', DeleteProductCertificateView.as_view()),
+
+    path('products/<int:product_id>/images/<int:image_id>/', DeleteProductImageView.as_view()),
+
     path('services/<int:pk>/', ServiceDetailView.as_view()),
 
 ]

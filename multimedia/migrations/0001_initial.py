@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
                 ('width', models.CharField(max_length=8)),
                 ('height', models.CharField(max_length=8)),
                 ('size', models.CharField(max_length=8)),
-                ('type', models.CharField(choices=[(multimedia.models.Media.Types['JPEG'], (('JPEG', 'image/JPEG'),)), (multimedia.models.Media.Types['JPG'], (('JPG', 'image/JPG'),)), (multimedia.models.Media.Types['PNG'], (('PNG', 'image/PNG'),)), (multimedia.models.Media.Types['VIDEO'], (('MP4', 'video/mp4'),)), (multimedia.models.Media.Types['PDF'], (('PDF', 'application/pdf'),))], max_length=17)),
+                ('type', models.CharField(choices=[(multimedia.models.Image.Types['JPEG'], (('JPEG', 'image/JPEG'),)), (multimedia.models.Image.Types['JPG'], (('JPG', 'image/JPG'),)), (multimedia.models.Image.Types['PNG'], (('PNG', 'image/PNG'),))], max_length=17)),
                 ('created_date', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date when was created')),
                 ('uploaded', models.BooleanField(default=False, help_text='stores if the file could be uploaded')),
             ],

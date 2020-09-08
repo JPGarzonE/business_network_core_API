@@ -31,6 +31,7 @@ class DocumentModelSerializer(serializers.ModelSerializer):
             'path',
             'purpose',
             'type',
+            'size',
             'valid',
             'created_date',
             'uploaded'
@@ -41,6 +42,7 @@ class DocumentModelSerializer(serializers.ModelSerializer):
             'path',
             'purpose',
             'type',
+            'size',
             'valid',
             'created_date',
             'uploaded'
@@ -60,21 +62,33 @@ class CreateDocumentSerializer(serializers.Serializer):
     """
 
     requires_context = True
-    file = serializers.FileField(required = True)
+
+    file = serializers.FileField(required = True, allow_empty_file = False)
+    purpose = serializers.CharField(
+        help_text = "Describes the need that the document meets. Ej: Company comercial certificate",
+        max_length = 50,
+        required = True
+    )
 
     @transaction.atomic
     def create(self, data):
         """Create and store a new document"""
+        user = self.context['user']
         file_object = data.get("file")
+        purpose = data.get("purpose")
+
+        file_size = file_object.size # size in bytes
 
         document = Document.objects.create(
+            user = user,
             name = file_object.name,
-            purpose = "Company comercial certificate"
+            size = file_size,
+            purpose = purpose
         )
         document_id = document.id
 
         bucket_directory = '{username}/{file_object_id}/'.format( 
-            username = self.context['user'],
+            username = user.username,
             file_object_id = document_id
         )
 
@@ -105,6 +119,6 @@ class CreateDocumentSerializer(serializers.Serializer):
         else:
             raise Exception("File {filename} alredy exists for the user {username} in bucket {bucket_name}".format(
                 filename = file_object.name,
-                username = self.context['user'],
+                username = user.username,
                 bucket_name = file_storage.bucket_name
             ))

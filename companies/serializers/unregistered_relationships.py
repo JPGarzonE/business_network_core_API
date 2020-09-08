@@ -36,6 +36,7 @@ class CreateUnregisteredRelationshipSerializer(serializers.Serializer):
     unregistered_id = serializers.IntegerField()
 
     type = serializers.CharField(
+        help_text = "Type of the unregistered relationship. Ej: Comprador, Socio, Aliado estratégico",
         min_length = 1,
         max_length = 30
     )

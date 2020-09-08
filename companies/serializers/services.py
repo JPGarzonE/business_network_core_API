@@ -8,13 +8,13 @@ from rest_framework import serializers
 
 # Models
 from companies.models import Service
-from multimedia.models import Media
-from multimedia.serializers.media import MediaModelSerializer
+from multimedia.models import Image
+from multimedia.serializers.images import ImageModelSerializer
 
 class ServiceModelSerializer(serializers.ModelSerializer):
     """Service model serializer."""
 
-    media = MediaModelSerializer()
+    images = ImageModelSerializer()
 
     class Meta:
         """Service meta class."""
@@ -28,12 +28,12 @@ class ServiceModelSerializer(serializers.ModelSerializer):
             'name',
             'price',
             'description',
-            'media'
+            'images'
         )
 
         read_only_fields = (
-            'company'
-            'media',
+            'company',
+            'images',
         )
 
 
@@ -70,7 +70,11 @@ class HandleCompanyServiceSerializer(serializers.ModelSerializer):
         allow_null = True
     )
 
-    media_id = serializers.IntegerField(required = False)
+    images = serializers.ListField(
+        child = serializers.IntegerField(),
+        required = False,
+        help_text = "Array with the ids of the images (previously uploaded)"
+    )
 
     class Meta:
         """Service meta class."""
@@ -83,7 +87,7 @@ class HandleCompanyServiceSerializer(serializers.ModelSerializer):
             'name',
             'price',
             'description',
-            'media_id'
+            'images'
         )
 
         read_only_fields = (
@@ -94,20 +98,17 @@ class HandleCompanyServiceSerializer(serializers.ModelSerializer):
     def create(self, data):
         """Create new company service."""
         company = self.context['company']
-        media = None
-
-        if( data.get('media_id') ):
-            media_id = data.pop("media_id")
-            media = Media.objects.get( id = media_id )
 
         service = Service.objects.create(
             company = company,
             **data
         )
 
-        if media:
-            service.media = media
-            service.save()
+        if 'images' in data:
+            images = data.pop("images")
+
+            for image_id in images:
+                service.images.add( image_id )
 
         return service
 
@@ -117,14 +118,11 @@ class HandleCompanyServiceSerializer(serializers.ModelSerializer):
             Cutomize the update function for the serializer to update the
             related_field values.
         """
-        media = None
+        if 'images' in validated_data:
+            images = validated_data.pop("images")
 
-        if 'media_id' in validated_data :
-            media_id = validated_data.pop('media_id')
-            media = Media.objects.get( id = media_id )
-            
-            if media :
-                instance.media = media
+            for image_id in images:
+                instance.images.add( image_id )
 
         service_updated = super().update(instance, validated_data)     
 

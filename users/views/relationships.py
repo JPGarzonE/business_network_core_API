@@ -61,14 +61,14 @@ class RelationshipViewSet(mixins.ListModelMixin,
             relationship = Relationship.objects.filter(
                 requester = self.user,
                 addressed = self.request.query_params.get('addressed_id'),
-                visibility = VisibilityState.OPEN
+                visibility = VisibilityState.OPEN.value
             )
 
             return relationship
 
         else:
             relationships = Relationship.objects.filter(
-                (Q(requester = self.user) | Q(addressed = self.user)) & Q(visibility = VisibilityState.OPEN)
+                (Q(requester = self.user) | Q(addressed = self.user)) & Q(visibility = VisibilityState.OPEN.value)
             )
 
             return relationships
@@ -78,14 +78,14 @@ class RelationshipViewSet(mixins.ListModelMixin,
         relationship = get_object_or_404(
             Relationship,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return relationship
 
     def perform_destroy(self, instance):
         """Disable product."""
-        instance.visibility = VisibilityState.DELETED
+        instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
     def retrieve(self, request, *args, **kwargs):

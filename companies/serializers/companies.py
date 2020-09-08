@@ -11,8 +11,8 @@ from django.db import transaction
 # Models
 from companies.models import Company
 from django.contrib.auth import get_user_model
-from multimedia.models import Media
-from multimedia.serializers.media import MediaModelSerializer
+from multimedia.models import Image
+from multimedia.serializers.images import ImageModelSerializer
 from users.models import Verification
 
 class CompanyModelSerializer(serializers.ModelSerializer):
@@ -29,7 +29,7 @@ class CompanyModelSerializer(serializers.ModelSerializer):
 
     industry = serializers.CharField(max_length=60)
 
-    logo = MediaModelSerializer(required = False)
+    logo = ImageModelSerializer(required = False)
 
     role = serializers.CharField(max_length=50, required = False)
 
@@ -116,11 +116,14 @@ class UpdateCompanySerializer(serializers.ModelSerializer):
             related_field values.
         """
         if 'logo_id' in validated_data:
-            media_id = validated_data.pop("logo_id")
-            media = Media.objects.get( id = media_id )
+            image_id = validated_data.pop("logo_id")
+            try:
+                image = Image.objects.get( id = image_id )
+            except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in 'logo_id'" )
 
-            if media :
-                instance.logo = media
+            if image :
+                instance.logo = image
         
         company_updated = super().update(instance, validated_data)
 

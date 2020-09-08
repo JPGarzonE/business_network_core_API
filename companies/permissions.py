@@ -3,6 +3,7 @@
 # Django Rest_framework
 from rest_framework.permissions import BasePermission
 
+
 class IsCompanyAccountOwner(BasePermission):
     """Allow acces only to account owner by the requesting user."""
 
@@ -15,6 +16,7 @@ class IsCompanyAccountOwner(BasePermission):
     def has_object_permission(self, request, view, obj):
         """Check object and user are the same"""
         return request.user == obj.user
+
 
 class IsDataOwner(BasePermission):
     """Allow access to the account owner of the data."""
@@ -31,6 +33,24 @@ class IsDataOwner(BasePermission):
         """Check object and user are the same"""
         return request.user == obj.user
 
+
+class IsPredominantEntiyOwner(BasePermission):
+    """Allow access to the user owner of the premidominant entity 
+    in a through model (Usually that exists because many to many relations)"""
+
+    message = "You don't have permission. You're not the owner of the data."
+
+    def has_permission(self, request, view):
+        """Let object permission grant access."""
+        obj = view.get_predominant_entity_owner()
+
+        return self.has_object_permission(request, view, obj)
+
+    def has_object_permission(self, request, view, obj):
+        """Check object and user are the same"""
+        return request.user == obj.user
+
+
 class IsUnregisteredRelationOwner(BasePermission):
     """Allow access to the account owner of the unregistered relation."""
 
@@ -46,6 +66,7 @@ class IsUnregisteredRelationOwner(BasePermission):
         """Check object and user are the same"""
         return request.user == obj.requester.user
 
+
 class UserIsVerified(BasePermission):
     """Allow acces to the account that is verified"""
 
@@ -56,6 +77,7 @@ class UserIsVerified(BasePermission):
         user_entity = view.get_account_entity().user
 
         return user_entity.is_verified
+
 
 class IsCompanyAccountOwnerOrIsVerified(BasePermission):
 

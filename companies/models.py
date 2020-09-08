@@ -8,7 +8,7 @@
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 from users.models import User, Verification, VisibilityState
-from multimedia.models import Media
+from multimedia.models import Image
 
 # Utils
 from enum import Enum
@@ -17,7 +17,8 @@ class Certificate(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=60)
     description = models.CharField(max_length=155, blank=True, null=True)
-    image = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    logo = models.ForeignKey(Image, models.CASCADE, 
+        help_text = "Logo that represents the certificate authority", blank=True, null=True)
 
     class Meta:
         db_table = 'certification'
@@ -30,7 +31,7 @@ class Company(models.Model):
     name = models.CharField(max_length=60)
     role = models.CharField(max_length=50, blank=True, null=True)
     priority = models.CharField(max_length=50, blank=True, null=True)
-    logo = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    logo = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
     industry = models.CharField(max_length=60)
     web_url = models.CharField(max_length=150, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
@@ -49,7 +50,7 @@ class Company(models.Model):
 
 class CompanyCertificate(models.Model):
     id = models.BigAutoField(primary_key=True)
-    company = models.OneToOneField(Company, models.PROTECT)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
     certificate = models.ForeignKey(Certificate, on_delete=models.PROTECT)
 
     visibility = models.CharField(
@@ -66,7 +67,8 @@ class CompanyCertificate(models.Model):
 
 
 class CompanySocialnetwork(models.Model):
-    company = models.OneToOneField(Company, models.PROTECT, primary_key=True)
+    id = models.BigAutoField(primary_key=True)
+    company = models.ForeignKey(Company, on_delete=models.PROTECT)
     social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
     class Meta:
@@ -97,7 +99,7 @@ class Dnaelement(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=45)
     category = models.CharField(max_length=45)
-    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    image = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
     description = models.CharField(max_length=155, blank=True, null=True)
 
@@ -135,7 +137,8 @@ class Employee(models.Model):
 
 
 class EmployeeSocialnetwork(models.Model):
-    employee = models.OneToOneField(Employee, models.PROTECT, primary_key=True)
+    id = models.BigAutoField(primary_key=True)
+    employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
     social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
     class Meta:
@@ -148,7 +151,7 @@ class ImportantEvent(models.Model):
     source_url = models.CharField(max_length=150, blank=True, null=True)
     name = models.CharField(max_length=45)
     description = models.CharField(max_length=155, blank=True, null=True)
-    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    image = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT, db_column='Company_id')  # Field name made lowercase.
 
     visibility = models.CharField(
@@ -192,7 +195,7 @@ class Location(models.Model):
     zip = models.CharField(max_length=45, blank=True, null=True)
     principal = models.BooleanField(default = False)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    headquarters_image = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
 
     visibility = models.CharField(
         max_length=20,
@@ -218,7 +221,7 @@ class Product(models.Model):
     description = models.CharField(max_length=155, blank=True, null=True)
 
     certificates = models.ManyToManyField(Certificate, through = "ProductCertificate")
-    media = models.ManyToManyField(Media, through = "ProductMedia")
+    images = models.ManyToManyField(Image, through = "ProductImage")
 
     visibility = models.CharField(
         max_length=20,
@@ -234,7 +237,7 @@ class Product(models.Model):
 
 class ProductCertificate(models.Model):
     id = models.BigAutoField(primary_key=True)
-    product = models.OneToOneField(Product, models.PROTECT)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
     certificate = models.ForeignKey(Certificate, on_delete=models.PROTECT)
 
     class Meta:
@@ -242,14 +245,14 @@ class ProductCertificate(models.Model):
         unique_together = (('product', 'certificate'),)
 
 
-class ProductMedia(models.Model):
+class ProductImage(models.Model):
     id = models.BigAutoField(primary_key=True)
-    product = models.OneToOneField(Product, models.PROTECT)
-    media = models.ForeignKey(Media, models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT)
+    image = models.ForeignKey(Image, models.PROTECT, unique = False)
 
     class Meta:
-        db_table = 'productmedia'
-        unique_together = (('product', 'media'),)
+        db_table = 'productimage'
+        unique_together = (('product', 'image'),)
 
 
 class Service(models.Model):
@@ -259,7 +262,7 @@ class Service(models.Model):
     category = models.CharField(max_length=60)
     description = models.CharField(max_length=155, blank=True, null=True)
     company = models.ForeignKey(Company, models.PROTECT)
-    media = models.ForeignKey(Media, models.CASCADE, blank=True, null=True)
+    images = models.ManyToManyField(Image)
 
     visibility = models.CharField(
         max_length=20,

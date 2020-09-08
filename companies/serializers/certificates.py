@@ -9,21 +9,21 @@ from django.db import transaction
 
 # Models
 from companies.models import Certificate, CompanyCertificate
-from multimedia.models import Media
-from multimedia.serializers.media import MediaModelSerializer
+from multimedia.models import Image
+from multimedia.serializers.images import ImageModelSerializer
 
 
 class CertificateModelSerializer(serializers.ModelSerializer):
     """Certificate model serializer."""
 
-    image = MediaModelSerializer()
+    logo = ImageModelSerializer()
 
     class Meta:
         """Certificate meta class."""
 
         model = Certificate
 
-        fields = ('id', 'name', 'description', 'image')
+        fields = ('id', 'name', 'description', 'logo')
 
 
 class CompanyCertificateModelSerializer(serializers.ModelSerializer):
@@ -57,14 +57,14 @@ class CreateCompanyCertificateSerializer(serializers.ModelSerializer):
         allow_blank = True
     )
 
-    image_id = serializers.IntegerField(
+    logo_id = serializers.IntegerField(
         required = False,
-        help_text = "Id of the image previously uploaded in the platform"
+        help_text = "Id of the image (previously uploaded in the platform) that represents the certificate authority"
     )
 
     certificate_id = serializers.IntegerField(
         required = False,
-        help_text = "Id of the certificate previously created"
+        help_text = "Id of the certificate (previously created)"
     )
 
     class Meta:
@@ -72,7 +72,7 @@ class CreateCompanyCertificateSerializer(serializers.ModelSerializer):
 
         model = Certificate
 
-        fields = ('id', 'name', 'description', 'image_id', 'certificate_id')
+        fields = ('id', 'name', 'description', 'logo_id', 'certificate_id')
 
     
     @transaction.atomic
@@ -89,14 +89,17 @@ class CreateCompanyCertificateSerializer(serializers.ModelSerializer):
         elif data.get('name'):
             image = None
 
-            if data.get('image_id'):
-                image_id = data.pop("image_id")
-                image = Media.objects.get( id = image_id )
+            if data.get('logo_id'):
+                image_id = data.pop("logo_id")
+                try:
+                    image = Image.objects.get( id = image_id )
+                except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in 'logo_id'" )
 
             certificate = Certificate.objects.create(**data)
 
             if image:
-                certificate.image = image
+                certificate.logo = image
                 certificate.save()
         else:
             raise Exception("The body data must have at least a name for the certificate creation or a certificate_id for associating to a existing certificate.")
@@ -126,7 +129,7 @@ class UpdateCertificateSerializer(serializers.ModelSerializer):
         allow_blank = True
     )
 
-    image_id = serializers.IntegerField(
+    logo_id = serializers.IntegerField(
         required = False,
         help_text = "Id of the image previously uploaded in the platform"
     )
@@ -136,21 +139,22 @@ class UpdateCertificateSerializer(serializers.ModelSerializer):
 
         model = Certificate
 
-        fields = ('id', 'name', 'description', 'image_id')
+        fields = ('id', 'name', 'description', 'logo_id')
     
     @transaction.atomic
     def update(self, instance, validated_data):
         """Customize the update function for the serializer to update the
             related_field values.
         """
-        image = None
+        if 'logo_id' in validated_data:
+            logo_id = validated_data.pop('logo_id')
+            try:
+                logo = Image.objects.get( id = logo_id )
+            except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in 'logo_id'" )
 
-        if 'image_id' in validated_data:
-            image_id = validated_data.pop('image_id')
-            image = Media.objects.get( id = image_id )
-
-            if image:
-                instance.image = image
+            if logo:
+                instance.logo = logo
 
         certificate_updated = super().update(instance, validated_data)
 

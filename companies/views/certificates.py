@@ -9,17 +9,18 @@ from rest_framework.views import APIView
 
 # Django
 from django.utils.decorators import method_decorator
+from django.http import Http404
 
 # Documentation
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
-from companies.models import Company, Certificate, CompanyCertificate, VisibilityState
+from companies.models import Company, Certificate, CompanyCertificate, ProductCertificate, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from companies.permissions import IsCompanyAccountOwner, IsDataOwner
+from companies.permissions import IsCompanyAccountOwner, IsDataOwner, IsPredominantEntiyOwner
 
 # Serializers
 from companies.serializers import (
@@ -35,7 +36,7 @@ from companies.serializers import (
 ))
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a certificate", tags = ["Certificates"],
         operation_description = "Endpoint to delete a certificate by its id",
-        responses = { 204: {}, 404: openapi.Response("Not Found"),
+        responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
         }, security = [{ "api_key": [] }]
 ))
@@ -80,7 +81,7 @@ class CompanyCertificateViewSet(mixins.ListModelMixin,
         """Return company certificates"""
         company_certificate = CompanyCertificate.objects.filter(
             company = self.company,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return company_certificate
@@ -139,20 +140,23 @@ class CompanyCertificateViewSet(mixins.ListModelMixin,
         }, security = [{ "api_key": [] }])
     def partial_update(self, request, *args, **kwargs):
         """Enpoint to update partially a company certificate"""
+        try:
+            instance = self.get_object()
+            certificate_serializer = UpdateCertificateSerializer(
+                instance = instance.certificate,
+                data = request.data,
+                partial = True
+            )
 
-        instance = self.get_object()
-        certificate_serializer = UpdateCertificateSerializer(
-            instance = instance.certificate,
-            data = request.data,
-            partial = True
-        )
+            certificate_serializer.is_valid(raise_exception = True)
+            certificate = certificate_serializer.save()
+            instance.certificate = certificate
 
-        certificate_serializer.is_valid(raise_exception = True)
-        certificate = certificate_serializer.save()
-        instance.certificate = certificate
-
-        data = self.get_serializer(instance).data
-        data_status = status.HTTP_200_OK
+            data = self.get_serializer(instance).data
+            data_status = status.HTTP_200_OK
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
 
         return Response(data, status = data_status)
 
@@ -183,3 +187,57 @@ class CertificateDetailView(APIView):
         )
 
         return certificate
+
+
+class DeleteProductCertificateView(APIView):
+    """Product certificate view to delete."""
+
+    permission_classes = [IsAuthenticated, IsPredominantEntiyOwner]
+
+    @swagger_auto_schema( tags = ["Products"],
+        responses = { 204: openapi.Response("No Content", examples = {"application/json": 
+            {"detail": "Succesfully deleted"} }), 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": 
+                "You don't have permission. You're not the owner of the data."} }),
+            404: openapi.Response("Not Found", examples = {"application/json":
+               {"detail": "Product image not found with the id provided"}
+            })
+        }, security = [{ "api_key": [] }])
+    def delete(self, request, product_id, certificate_id, format=None):
+        """Delete a product certificate \n
+        Endpoint to delete a certificate from a product. (You have to be the owner of the product)\n"""
+
+        try:
+            product_certificate = self.product_certificate if self.product_certificate else self.get_object()
+            product_certificate.delete()
+
+            data = {"detail": "Succesfully deleted"}
+            data_status = status.HTTP_204_NO_CONTENT
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_404_NOT_FOUND
+
+        return Response(data, status = data_status)
+
+
+    def get_object(self):
+        product_id = self.kwargs.get('product_id')
+        certificate_id = self.kwargs.get('certificate_id')
+
+        try:
+            self.product_certificate = ProductCertificate.objects.get(
+                product__id = product_id,
+                certificate__id = certificate_id
+            )
+        except ProductCertificate.DoesNotExist:
+            raise Exception("Product certificate not found with the both ids provided")
+
+        return self.product_certificate
+
+
+    def get_predominant_entity_owner(self):
+        product_certificate = self.get_object()
+        product = product_certificate.product
+        company = product.company
+
+        return company

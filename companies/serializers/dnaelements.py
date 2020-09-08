@@ -7,13 +7,13 @@ from django.db import transaction
 from rest_framework import serializers
 
 # Models
-from companies.models import Dnaelement, Media
-from multimedia.serializers.media import MediaModelSerializer
+from companies.models import Dnaelement, Image
+from multimedia.serializers.images import ImageModelSerializer
 
 class DnaelementModelSerializer(serializers.ModelSerializer):
     """Dnaelement model serializer."""
 
-    media = MediaModelSerializer()
+    image = ImageModelSerializer()
 
     class Meta:
         """Dnaelement meta class."""
@@ -26,12 +26,12 @@ class DnaelementModelSerializer(serializers.ModelSerializer):
             'category',
             'name',
             'description',
-            'media'
+            'image'
         )
 
         read_only_fields = (
-            'company'
-            'media',
+            'company',
+            'image',
         )
 
 
@@ -62,7 +62,7 @@ class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
         allow_blank = True
     )
 
-    media_id = serializers.IntegerField(required = False)
+    image_id = serializers.IntegerField(required = False)
 
     class Meta:
         """Dnaelement meta class."""
@@ -74,32 +74,35 @@ class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
             'category',
             'name',
             'description',
-            'media_id'
+            'image_id'
         )
 
         read_only_fields = (
             'id',
-            'company'
-            'media_id',
+            'company',
+            'image_id',
         )
 
     @transaction.atomic
     def create(self, data):
         """Create new company Dnaelement."""
         company = self.context['company']
-        media = None
+        image = None
 
-        if( data.get('media_id') ):
-            media_id = data.pop("media_id")
-            media = Media.objects.get( id = media_id )
+        if( data.get('image_id') ):
+            image_id = data.pop("image_id")
+            try:
+                image = Image.objects.get( id = image_id )
+            except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in 'image_id'" )
 
         dnaelement = Dnaelement.objects.create(
             company = company,
             **data
         )
 
-        if media:
-            dnaelement.media = media
+        if image:
+            dnaelement.image = image
             dnaelement.save()
 
         return dnaelement
@@ -110,14 +113,17 @@ class HandleCompanyDnaelementSerializer(serializers.ModelSerializer):
             Cutomize the update function for the serializer to update the
             related_field values.
         """
-        media = None
+        image = None
 
-        if 'media_id' in validated_data :
-            media_id = validated_data.pop('media_id')
-            media = Media.objects.get( id = media_id )
+        if 'image_id' in validated_data :
+            image_id = validated_data.pop('image_id')
+            try:
+                image = Image.objects.get( id = image_id )
+            except Image.DoesNotExist:
+                    raise Exception( "Theres no image with the id provided in 'image_id'" )
             
-            if media :
-                instance.media = media
+            if image:
+                instance.image = image
 
         dna_updated = super().update(instance, validated_data)     
 

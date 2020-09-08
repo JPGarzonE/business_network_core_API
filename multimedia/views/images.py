@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 # Django
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 # Models
-from multimedia.models import Media
+from multimedia.models import Image
 
 # Permissions
 from rest_framework.permissions import (
@@ -18,7 +18,8 @@ from rest_framework.permissions import (
 )
 
 # Serializer
-from multimedia.serializers import MediaModelSerializer, CreateImageSerializer
+from multimedia.serializers import ImageModelSerializer, CreateImageSerializer
+
 
 class ImageViewSet(mixins.ListModelMixin,
                 mixins.CreateModelMixin,
@@ -26,8 +27,8 @@ class ImageViewSet(mixins.ListModelMixin,
                 viewsets.GenericViewSet):
     """Image view set"""
 
-    serializer_class = MediaModelSerializer
-    queryset = Media.objects.all()
+    serializer_class = ImageModelSerializer
+    queryset = Image.objects.all()
     parser_classes = (MultiPartParser, FormParser)
 
     def get_permissions(self):
@@ -42,12 +43,12 @@ class ImageViewSet(mixins.ListModelMixin,
         return [permission() for permission in permissions]
 
     def get_object(self):
-        media = get_object_or_404(
-            Media,
+        image = get_object_or_404(
+            Image,
             id = self.kwargs['pk']
         )
 
-        return media
+        return image
 
     def create(self, request, *args, **kwargs):
         """Handle images creation"""

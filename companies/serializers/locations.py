@@ -7,13 +7,13 @@ from rest_framework import serializers
 from django.db import transaction
 
 # Models
-from companies.models import Location, Media
-from multimedia.serializers.media import MediaModelSerializer
+from companies.models import Location, Image
+from multimedia.serializers.images import ImageModelSerializer
 
 class LocationModelSerializer(serializers.ModelSerializer):
     """Location model serializer."""
 
-    media = MediaModelSerializer()
+    headquarters_image = ImageModelSerializer()
 
     class Meta:
         """Location meta class."""
@@ -28,36 +28,18 @@ class LocationModelSerializer(serializers.ModelSerializer):
             'region',
             'address',
             'zip',
-            'media',
+            'headquarters_image',
             'principal',
         )
 
         read_only_fields = (
-            'company'
-            'media',
+            'company',
+            'headquarters_image',
         )
 
-    @transaction.atomic
-    def update(self, instance, validated_data):
-        """Update a company location."""
-        company = self.context['company']
-        first_principal_location = Location.objects.filter( company = company, principal = True )
 
-        principal = validated_data.get("principal")
-
-        if principal is True:
-            if first_principal_location:
-                for location in first_principal_location:
-                    location.principal = False
-                    location.save()
-
-            instance.principal = validated_data.pop("principal")
-            instance.save()
-
-        return super().update(instance, validated_data)
-
-class CreateCompanyLocationSerializer(serializers.Serializer):
-    """Create company location"""
+class HandleCompanyLocationSerializer(serializers.ModelSerializer):
+    """Create and update company location"""
 
     requires_context = True
 
@@ -95,10 +77,25 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
         allow_blank = True
     )
 
-    media = MediaModelSerializer( required = False )
+    headquarters_image_id = serializers.IntegerField(required = False)
 
     principal = serializers.BooleanField( required = False,
         help_text = "Attribute to indicate if its the main location of a user (Company)")
+
+    class Meta:
+        """Location meta class."""
+
+        model = Location
+
+        fields = (
+            'country',
+            'city',
+            'region',
+            'address',
+            'zip',
+            'headquarters_image_id',
+            'principal',
+        )
 
     @transaction.atomic
     def create(self, data):
@@ -109,32 +106,62 @@ class CreateCompanyLocationSerializer(serializers.Serializer):
 
         if data.get("principal"):
             principal = data.pop("principal")
-            if principal:
-                if first_principal_location:
-                    first_principal_location = first_principal_location[0]
-                    first_principal_location.principal = False
-                    first_principal_location.save()
-                principal = True
-            else:
-                principal = False
+            
+            if first_principal_location:
+                first_principal_location = first_principal_location[0]
+                first_principal_location.principal = False
+                first_principal_location.save()
         else:
             if not first_principal_location:
                 principal = True
             else:
                 principal = False
 
-        media = None
+        headquarters_image = None
 
-        if data.get('media'):
-            media_data = data.pop("media")
-            media = Media.objects.create( **media_data )
-
-        data['media'] = media
+        if data.get('headquarters_image_id'):
+            image_id = data.pop("headquarters_image_id")
+            try:
+                headquarters_image = Image.objects.get( id = image_id )
+            except Image.DoesNotExist:
+                raise Exception("Theres no image with the id provided in 'headquarters_image_id'")
 
         location = Location.objects.create(
             company = company,
             principal = principal,
             **data
         )
+        
+        if headquarters_image:
+            location.headquarters_image = headquarters_image
+            print(location.headquarters_image)
+            location.save()
 
         return location
+    
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """Update a company location."""
+        company = self.context['company']
+        principal = validated_data.get("principal")
+
+        if principal is True:
+            first_principal_location = Location.objects.filter( company = company, principal = True )
+
+            if first_principal_location:
+                for location in first_principal_location:
+                    location.principal = False
+                    location.save()
+
+            instance.principal = validated_data.pop("principal")
+
+        if validated_data.get('headquarters_image_id'):
+            image_id = validated_data.pop("headquarters_image_id")
+            try:
+                headquarters_image = Image.objects.get( id = image_id )
+            except Image.DoesNotExist:
+                raise Exception("Theres no image with the id provided in 'headquarters_image_id'")
+
+            instance.headquarters_image = headquarters_image
+
+        return super().update(instance, validated_data)

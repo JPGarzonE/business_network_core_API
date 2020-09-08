@@ -10,17 +10,18 @@ from rest_framework.views import APIView
 # Django
 from django.db import transaction
 from django.utils.decorators import method_decorator
+from django.http import Http404
 
 # Documentation
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
-from companies.models import Company, Product, ProductCertificate, ProductMedia, VisibilityState
+from companies.models import Company, Product, ProductCertificate, ProductImage, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from companies.permissions import IsCompanyAccountOwner, IsDataOwner
+from companies.permissions import IsCompanyAccountOwner, IsDataOwner, IsPredominantEntiyOwner
 
 # Serializers
 from companies.serializers import ProductModelSerializer, HandleCompanyProductSerializer
@@ -30,8 +31,8 @@ from companies.serializers import ProductModelSerializer, HandleCompanyProductSe
     responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
 ))
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
-        operation_description = "Endpoint to delete a certificate by its id",
-        responses = { 204: {}, 404: openapi.Response("Not Found"),
+        operation_description = "Endpoint to delete a product by its id",
+        responses = { 204: "Not Found", 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
         }, security = [{ "api_key": [] }]
 ))
@@ -72,7 +73,7 @@ class ProductViewSet(mixins.ListModelMixin,
         """Return company products"""
         return Product.objects.filter(
             company = self.company,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
     def get_object(self):
@@ -80,7 +81,7 @@ class ProductViewSet(mixins.ListModelMixin,
         product = get_object_or_404(
             Product,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return product
@@ -91,13 +92,13 @@ class ProductViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
 
         product_certificates = ProductCertificate.objects.filter( product = instance )
-        product_media = ProductMedia.objects.filter( product = instance )
+        product_images = ProductImage.objects.filter( product = instance )
 
         for certificate in product_certificates:
             certificate.delete()
             
-        for media in product_media:
-            media.delete()
+        for image in product_images:
+            image.delete()
 
         instance.save()
 
@@ -111,20 +112,23 @@ class ProductViewSet(mixins.ListModelMixin,
     def create(self, request, *args, **kwargs):
         """Create product\n
             Endpoint to create a product.\n 
-            To append complementary data (like certificates or media) to a product you have 
+            To append complementary data (like certificates or image) to a product you have 
             to append a list with the ids ([189, 243, 2]) of the objects previosuly uploaded,
-            this lists are appended in the fields 'certificates' and 'media' respectively. (Request Body below)
+            this lists are appended in the fields 'certificates' and 'images' respectively. (Request Body below)
         """
+        try:
+            product_serializer = HandleCompanyProductSerializer(
+                data = request.data,
+                context = {'company': self.company}
+            )
+            product_serializer.is_valid(raise_exception = True)
+            product = product_serializer.save()
 
-        product_serializer = HandleCompanyProductSerializer(
-            data = request.data,
-            context = {'company': self.company}
-        )
-        product_serializer.is_valid(raise_exception = True)
-        product = product_serializer.save()
-
-        data = self.get_serializer(product).data
-        data_status = status.HTTP_201_CREATED
+            data = self.get_serializer(product).data
+            data_status = status.HTTP_201_CREATED
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
 
@@ -132,7 +136,7 @@ class ProductViewSet(mixins.ListModelMixin,
         responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
-                {"name": ["This field may not be null"]} 
+                {"name": ["This field may not be null"]}
             })
         }, security = [{ "api_key": [] }])
     def partial_update(self, request, *args, **kwargs):
@@ -140,20 +144,24 @@ class ProductViewSet(mixins.ListModelMixin,
             Endpoint to update partially a product.\n 
             When some object id is added in certificates or media, those objects are
             going to be added to the existing ones, not overwritten. To delete a certificate or 
-            a media do it through the ProductCertificate or ProductMedia delete endpoints
+            a media do it through the ProductCertificate or ProductImage delete endpoints
         """
-        instance = self.get_object()
-        product_serializer = HandleCompanyProductSerializer(
-            instance = instance,
-            data = request.data,
-            partial = True
-        )
+        try:
+            instance = self.get_object()
+            product_serializer = HandleCompanyProductSerializer(
+                instance = instance,
+                data = request.data,
+                partial = True
+            )
 
-        product_serializer.is_valid(raise_exception = True)
-        product = product_serializer.save()
+            product_serializer.is_valid(raise_exception = True)
+            product = product_serializer.save()
 
-        data = self.get_serializer(product).data
-        data_status = status.HTTP_200_OK
+            data = self.get_serializer(product).data
+            data_status = status.HTTP_200_OK
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
 
@@ -169,16 +177,76 @@ class ProductDetailView(APIView):
         responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
     def get(self, request, pk, format = None):
         """Endpoint to retrieve the product by the id"""
-        product = self.get_object(pk)
-        serializer = ProductModelSerializer(product)
+        try:
+            product = self.get_object(pk)
+            serializer = ProductModelSerializer(product)
 
-        return Response(serializer.data)
+            data = serializer.data
+            data_status = status.HTTP_200_OK
+        except Http404:
+            data = {"detail": "Product not found with the id provided"}
+            data_status = status.HTTP_404_NOT_FOUND
+
+        return Response(data, status = data_status)
 
     def get_object(self, pk):
         product = get_object_or_404(
             Product,
             id = pk,
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return product
+
+
+class DeleteProductImageView(APIView):
+    """Product image view to delete."""
+
+    permission_classes = [IsAuthenticated, IsPredominantEntiyOwner]
+
+    @swagger_auto_schema( tags = ["Products"],
+        responses = { 204: openapi.Response("No Content", examples = {"application/json": 
+            {"detail": "Succesfully deleted"} }), 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": 
+                "You don't have permission. You're not the owner of the data."} }),
+            404: openapi.Response("Not Found", examples = {"application/json":
+               {"detail": "Product image not found with the id provided"}
+            })
+        }, security = [{ "api_key": [] }])
+    def delete(self, request, product_id, image_id, format=None):
+        """Delete a product image \n
+        Endpoint to delete an image from a product. (You have to be the owner of the product)\n
+        If you want to delete definitely the image in your galery do it through the Image delete endpoint."""
+
+        try:
+            product_image = self.product_image if self.product_image else self.get_object()
+            product_image.delete()
+
+            data = {"detail": "Succesfully deleted"}
+            data_status = status.HTTP_204_NO_CONTENT
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_404_NOT_FOUND
+
+        return Response(data, status = data_status)
+
+    def get_object(self):
+        product_id = self.kwargs.get('product_id')
+        image_id = self.kwargs.get('image_id')
+
+        try:
+            self.product_image = ProductImage.objects.get(
+                product__id = product_id,
+                image__id = image_id
+            )
+        except ProductImage.DoesNotExist:
+            raise Exception("Product image not found with the both ids provided")
+
+        return self.product_image
+
+    def get_predominant_entity_owner(self):
+        product_image = self.get_object()
+        product = product_image.product
+        company = product.company
+
+        return company

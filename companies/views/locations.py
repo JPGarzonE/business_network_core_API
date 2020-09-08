@@ -22,7 +22,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Serializers
-from companies.serializers import LocationModelSerializer, CreateCompanyLocationSerializer
+from companies.serializers import LocationModelSerializer, HandleCompanyLocationSerializer
 
 # Utils
 from distutils.util import strtobool
@@ -72,29 +72,41 @@ class LocationViewSet(mixins.ListModelMixin,
         """Return company locations"""
         principal = self.request.query_params.get('principal')
         
-        try:
-            principal = bool( strtobool(principal) )
-        except ValueError:
-            principal = False
-
         if principal:
+            principal = bool( strtobool(principal) )
+
             return Location.objects.filter(
                 company = self.company,
-                visibility = VisibilityState.OPEN,
+                visibility = VisibilityState.OPEN.value,
                 principal = principal
             )
         else:
             return Location.objects.filter(
                 company = self.company,
-                visibility = VisibilityState.OPEN
+                visibility = VisibilityState.OPEN.value
             )
+
+
+    def list(self, request, *args, **kwargs):
+        """Valid param principal before super list eventually executes get_queryset method"""
+        principal = self.request.query_params.get('principal')
+
+        if principal:
+            try:
+                bool( strtobool(principal) )
+            except ValueError:
+                data = {"detail": "Query param 'principal' must be a boolean value"}
+                return Response(data, status = status.HTTP_400_BAD_REQUEST)
+
+        return super(LocationViewSet, self).list(request, *args, **kwargs)
+
 
     def get_object(self):
         """Return the location by the id"""
         location = get_object_or_404(
             Location,
             id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN
+            visibility = VisibilityState.OPEN.value
         )
 
         return location
@@ -113,19 +125,26 @@ class LocationViewSet(mixins.ListModelMixin,
         }, security = [{ "api_key": [] }])
     def partial_update(self, request, *args, **kwargs):
         """Endpoint to update partially a location object. It is partial, so its not needed pass all the body values"""
+        try:
+            instance = self.get_object()
+            serializer = HandleCompanyLocationSerializer(
+                instance = instance,
+                data=  request.data,
+                context = {'company': self.company},
+                partial = True
+            )
+            serializer.is_valid(raise_exception=True)
+            location = serializer.save()
 
-        instance = self.get_object()
-        serializer = LocationModelSerializer(
-            instance = instance,
-            data=  request.data,
-            context = {'company': self.company},
-            partial = True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
+            data = self.get_serializer(location).data
+            data_status = status.HTTP_200_OK
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
 
-    @swagger_auto_schema( operation_id = "Create a location", tags = ["Locations"], request_body = CreateCompanyLocationSerializer,
+        return Response(data, status = data_status)
+
+    @swagger_auto_schema( operation_id = "Create a location", tags = ["Locations"], request_body = HandleCompanyLocationSerializer,
         responses = { 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Authentication credentials were not provided"} }),
             400: openapi.Response("Bad request", examples = {"application/json":
@@ -134,15 +153,19 @@ class LocationViewSet(mixins.ListModelMixin,
         }, security = [{ "api_key": [] }])
     def create(self, request, *args, **kwargs):
         """Endpoint to create a location of a company."""
-        location_serializer = CreateCompanyLocationSerializer(
-            data = request.data,
-            context = {'company': self.company}
-        )
-        location_serializer.is_valid(raise_exception = True)
-        location = location_serializer.save()
+        try:
+            location_serializer = HandleCompanyLocationSerializer(
+                data = request.data,
+                context = {'company': self.company}
+            )
+            location_serializer.is_valid(raise_exception = True)
+            location = location_serializer.save()
 
-        data = self.get_serializer(location).data
-        data_status = status.HTTP_201_CREATED
+            data = self.get_serializer(location).data
+            data_status = status.HTTP_201_CREATED
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
 
@@ -152,9 +175,7 @@ class LocationViewSet(mixins.ListModelMixin,
         """Endpoint to retrieve a location by its id"""
         response = super(LocationViewSet, self).retrieve(request, *args, **kwargs)
 
-        data = {
-            'location': response.data
-        }
+        data = response.data
         data_status = status.HTTP_200_OK
 
         return Response( data, status = data_status )
