@@ -67,7 +67,6 @@ class CompanyCertificate(models.Model):
 
 
 class CompanySocialnetwork(models.Model):
-    id = models.BigAutoField(primary_key=True)
     company = models.ForeignKey(Company, on_delete=models.PROTECT)
     social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
@@ -94,6 +93,18 @@ class Contact(models.Model):
 
     class Meta:
         db_table = 'contact'
+
+
+class Currency(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=45)
+    code = models.CharField(max_length=6)
+    region = models.CharField(max_length=50)
+    is_active = models.BooleanField(default = True)
+
+    class Meta:
+        db_table = 'currency'
+
 
 class Dnaelement(models.Model):
     id = models.BigAutoField(primary_key=True)
@@ -137,7 +148,6 @@ class Employee(models.Model):
 
 
 class EmployeeSocialnetwork(models.Model):
-    id = models.BigAutoField(primary_key=True)
     employee = models.ForeignKey(Employee, on_delete=models.PROTECT)
     social_network = models.ForeignKey('Socialnetwork', models.CASCADE)
 
@@ -214,8 +224,7 @@ class Product(models.Model):
     name = models.CharField(max_length=50)
     company = models.ForeignKey(Company, models.PROTECT)
     category = models.CharField(max_length=60)
-    minimum_price = models.CharField(max_length=20, blank=True, null=True)
-    maximum_price = models.CharField(max_length=20, blank=True, null=True)
+    pricing = models.OneToOneField("ProductPricing", on_delete=models.CASCADE, null = True)
     tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
     minimum_purchase = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
@@ -253,6 +262,16 @@ class ProductImage(models.Model):
     class Meta:
         db_table = 'productimage'
         unique_together = (('product', 'image'),)
+
+
+class ProductPricing(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    minimum_price = models.DecimalField(max_digits=15, decimal_places=2)
+    maximum_price = models.DecimalField(max_digits=15, decimal_places=2, null = True, blank = True)
+    currency = models.ForeignKey(Currency, models.PROTECT)
+
+    class Meta:
+        db_table = 'productpricing'
 
 
 class Service(models.Model):

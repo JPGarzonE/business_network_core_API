@@ -59,6 +59,12 @@ router.register(
     basename = 'certificates'
 )
 
+router.register(
+    'currencies',
+    CurrencyViewSet,
+    basename = 'currencies'
+)
+
 urlpatterns = [
     path('', include(router.urls)),
 

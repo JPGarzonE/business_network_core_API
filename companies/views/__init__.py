@@ -1,4 +1,5 @@
 from .certificates import CompanyCertificateViewSet, CertificateDetailView, DeleteProductCertificateView
+from .currencies import *
 from .companies import *
 from .contacts import *
 from .dnaelements import *

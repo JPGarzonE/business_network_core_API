@@ -1,6 +1,7 @@
 from .certificates import *
 from .companies import *
 from .contacts import *
+from .currencies import *
 from .dnaelements import *
 from .interests import *
 from .locations import *
