@@ -32,7 +32,7 @@ from companies.serializers import ProductModelSerializer, HandleCompanyProductSe
 ))
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
         operation_description = "Endpoint to delete a product by its id",
-        responses = { 204: "Not Found", 404: openapi.Response("Not Found"),
+        responses = { 204: "No Content", 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
         }, security = [{ "api_key": [] }]
 ))

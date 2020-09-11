@@ -14,8 +14,7 @@ from companies.models import UnregisteredCompany
 class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(
-        max_length=60,
-        validators=[UniqueValidator(queryset=UnregisteredCompany.objects.all())]
+        max_length=60
     )
 
     nit = serializers.CharField(
@@ -33,7 +32,6 @@ class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
     industry = serializers.CharField(max_length=60)
 
     email = serializers.EmailField(
-        validators = [ UniqueValidator( queryset = UnregisteredCompany.objects.all() ) ],
         required = False
     )
 
