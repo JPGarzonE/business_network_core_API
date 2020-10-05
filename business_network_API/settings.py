@@ -26,7 +26,7 @@ SECRET_KEY = '#5r-#squ6!+_80=nkd*_5hi7*j=f#^!(68=nj9nu)4%*)7t!z0'
 DEBUG = True
 
 ALLOWED_HOSTS = ['bnc-env.us-west-1.elasticbeanstalk.com', 'localhost', '52.52.146.46', '172.31.0.44', '172.31.28.18',
-    'api.joinconecty.com', '192.168.0.9']
+    'api.joinconecty.com', '127.0.0.1']
 
 
 # Application definition

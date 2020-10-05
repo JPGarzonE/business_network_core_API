@@ -47,7 +47,9 @@ class CreateCompanyCertificateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(
         min_length = 2,
         max_length = 60,
-        required = False
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     description = serializers.CharField(
@@ -86,7 +88,7 @@ class CreateCompanyCertificateSerializer(serializers.ModelSerializer):
                 Certificate,
                 id = certificate_id
             )
-        elif data.get('name'):
+        elif data.get('name') and len(data.get('name')) > 0:
             image = None
 
             if data.get('logo_id'):

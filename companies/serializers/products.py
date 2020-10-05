@@ -90,19 +90,20 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         max_digits=15, 
         decimal_places=2,
         required = False,
-        allow_null = True
     )
 
     tariff_heading = serializers.CharField(
         min_length = 0,
         max_length = 20,
         required = False,
-        allow_null = True
+        allow_null = True,
+        allow_blank = True
     )
 
     minimum_purchase = serializers.CharField(
         min_length = 0,
-        max_length = 20
+        max_length = 20,
+        required = True
     )
 
     currency_id = serializers.IntegerField(

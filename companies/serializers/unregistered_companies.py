@@ -26,25 +26,33 @@ class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
             )
         ],
 
-        required = False
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     industry = serializers.CharField(max_length=60)
 
     email = serializers.EmailField(
-        required = False
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     country = serializers.CharField(
         min_length = 2,
         max_length = 40,
-        required = False
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     city = serializers.CharField(
         min_length = 1,
         max_length = 40,
-        required = False
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     class Meta():
