@@ -52,7 +52,9 @@ class UserSignupSerializer(serializers.Serializer):
     Handle sign up data validation and user/profile creation.
     """
     email = serializers.EmailField(
-        validators = [ UniqueValidator( queryset = User.objects.all() ) ]
+        validators = [ 
+            UniqueValidator( queryset = User.objects.all(), message = "There is alredy a user with this email" )
+        ]
     )
 
     full_name = serializers.CharField(help_text = _("Complete real name of the user"))

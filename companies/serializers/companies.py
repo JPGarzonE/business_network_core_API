@@ -57,12 +57,20 @@ class SignupCompanyModelSerializer(serializers.ModelSerializer):
 
     name = serializers.CharField(
         max_length=60,
-        validators=[UniqueValidator(queryset=Company.objects.all())]
+        validators=[
+            UniqueValidator(queryset=Company.objects.all(), message = "There is alredy a company with this name")
+        ]
     )
 
-    nit = RegexValidator(
-        regex = r'(\d{9,9}((.)\d)?)',
-        message = "El nit debe estar acorde al formato de la registraduria"
+    nit = serializers.CharField(
+        max_length = 11,
+        validators = [
+            RegexValidator(
+                regex = r'(\d{9,9}((.)\d)?)',
+                message = "El nit debe estar acorde al formato de la registraduria"
+            ),
+            UniqueValidator(queryset=Company.objects.all(), message = "There is alredy a company with this nit")
+        ]
     )
 
     industry = serializers.CharField(max_length=60)
