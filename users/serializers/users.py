@@ -81,16 +81,28 @@ class UserSignupSerializer(serializers.Serializer):
         
         return data
 
+    def generate_username(self, company_name):
+        """Recieve the name of the company and generate a valid username for it."""
+        username_lower = company_name.lower()
+        generated_username = username_lower.strip().replace(" ", ".")
+        i = 0
+        while True:
+            username = generated_username if i == 0 else generated_username + str(i)
+            try:
+                User.objects.get( username = username )
+            except User.DoesNotExist:
+                break
+            
+            i += 1
+        
+        return username
+
     @transaction.atomic
     def create(self, data):
         """Handle user and profile creation"""
         data.pop('password_confirmation')
         company_data = data.pop("company")
-
-        data_username = company_data.get("name")
-        username_lower = data_username.lower()
-        username = username_lower.strip().replace(" ", ".")
-        data["username"] = username
+        data["username"] = self.generate_username( company_data.get("name") )
 
         certificate = None
         if data.get("comercial_certificate_id"):
@@ -100,18 +112,17 @@ class UserSignupSerializer(serializers.Serializer):
             if certificate:
                 verification = Verification.objects.create( state = "InProgress" )
                 certificate.verification = verification
+                certificate.save()
         else:
             verification = Verification.objects.create( state = "None" )
         
         data["verification"] = verification
 
-        user = User.objects.create_user(**data, is_client = True)
-        company = Company.objects.create( user = user, **company_data )
-
-        verification.save()
+        user = User.objects.create_user(is_client = True, **data)
+        Company.objects.create( user = user, **company_data )
 
         if certificate and certificate.verification == verification:
-            send_verification_notification_email(user)
+            send_verification_notification_email(user, certificate.path)
 
         token, created = Token.objects.get_or_create( user = user )
         return user, token.key

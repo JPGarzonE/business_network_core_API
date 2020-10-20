@@ -224,7 +224,11 @@ class Product(models.Model):
     name = models.CharField(max_length=50)
     company = models.ForeignKey(Company, models.PROTECT)
     category = models.CharField(max_length=60)
-    pricing = models.OneToOneField("ProductPricing", on_delete=models.CASCADE, null = True)
+
+    minimum_price = models.DecimalField(max_digits=15, decimal_places=2)
+    maximum_price = models.DecimalField(max_digits=15, decimal_places=2, null = True, blank = True)
+    price_currency = models.ForeignKey(Currency, models.PROTECT)
+
     tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
     minimum_purchase = models.CharField(max_length=20, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
@@ -242,6 +246,13 @@ class Product(models.Model):
 
     class Meta:
         db_table = 'product'
+
+    def delete(self):
+        self.visibility = VisibilityState.DELETED.value
+        self.save()
+
+    def hard_delete(self):
+        super(Product, self).delete()
 
 
 class ProductCertificate(models.Model):
@@ -262,16 +273,6 @@ class ProductImage(models.Model):
     class Meta:
         db_table = 'productimage'
         unique_together = (('product', 'image'),)
-
-
-class ProductPricing(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    minimum_price = models.DecimalField(max_digits=15, decimal_places=2)
-    maximum_price = models.DecimalField(max_digits=15, decimal_places=2, null = True, blank = True)
-    currency = models.ForeignKey(Currency, models.PROTECT)
-
-    class Meta:
-        db_table = 'productpricing'
 
 
 class Service(models.Model):

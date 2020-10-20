@@ -43,6 +43,9 @@ THIRD_PARTY_APPS = [
     # Cors headers
     'corsheaders',
 
+    # postgres
+    'django.contrib.postgres',
+
     # Rest framework
     'rest_framework',
     'rest_framework.authtoken',
@@ -56,6 +59,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'companies',
+    'market',
     'multimedia',
     'searches',
     'users',

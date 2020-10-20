@@ -10,8 +10,6 @@ from companies.models import Company, UnregisteredCompany
     # Serializers
 from companies.serializers import CompanyModelSerializer, UnregisteredCompanyModelSerializer
 
-# utils
-from itertools import chain
 
 class SearchCompaniesViewSet(viewsets.GenericViewSet,
                             generics.ListAPIView):

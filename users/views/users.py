@@ -20,7 +20,6 @@ from users.permissions import IsAccountOwner
 
 # Models
 from users.models import User
-from companies.models import Company
 
 # Serializer
 from users.serializers import (
@@ -30,7 +29,6 @@ from users.serializers import (
     UserLoginSerializer, 
     AccountVerificationSerializer
 )
-from companies.serializers import CompanyModelSerializer
 
 # Create your views here.
 

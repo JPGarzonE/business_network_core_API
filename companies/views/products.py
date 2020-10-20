@@ -26,6 +26,9 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner, IsPredomin
 # Serializers
 from companies.serializers import ProductModelSerializer, HandleCompanyProductSerializer
 
+# Signals
+from companies import signals
+
 @method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List products", tags = ["Products"],
     operation_description = "Endpoint to list all the products of a company",
     responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
@@ -89,8 +92,6 @@ class ProductViewSet(mixins.ListModelMixin,
     @transaction.atomic
     def perform_destroy(self, instance):
         """Disable product."""
-        instance.visibility = VisibilityState.DELETED.value
-
         product_certificates = ProductCertificate.objects.filter( product = instance )
         product_images = ProductImage.objects.filter( product = instance )
 
@@ -100,7 +101,8 @@ class ProductViewSet(mixins.ListModelMixin,
         for image in product_images:
             image.delete()
 
-        instance.save()
+        instance.delete()
+        signals.post_product_delete.send(sender=Product, instance = instance)
 
     @swagger_auto_schema( tags = ["Products"], request_body = HandleCompanyProductSerializer,
         responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),

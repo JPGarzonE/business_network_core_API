@@ -8,7 +8,7 @@ from django.db.utils import IntegrityError
 from rest_framework import serializers
 
 # Models
-from companies.models import Certificate, Currency, Product, ProductCertificate, ProductPricing, ProductImage
+from companies.models import Certificate, Currency, Product, ProductCertificate, ProductImage
 from multimedia.models import Image
 
 # Serializers
@@ -19,10 +19,10 @@ from multimedia.serializers.images import ImageModelSerializer
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
 
-    minimum_price = serializers.DecimalField(max_digits=15, decimal_places=2, source = "pricing.minimum_price", allow_null = True)
-    maximum_price = serializers.DecimalField(max_digits=15, decimal_places=2, source = "pricing.maximum_price", allow_null = True)
+    minimum_price = serializers.DecimalField(max_digits=15, decimal_places=2, allow_null = True)
+    maximum_price = serializers.DecimalField(max_digits=15, decimal_places=2, allow_null = True)
     
-    currency = CurrencyModelSerializer(allow_null = True, source = "pricing.currency")
+    price_currency = CurrencyModelSerializer(allow_null = True)
     certificates = CertificateModelSerializer(many = True)
     images = ImageModelSerializer(many = True)
 
@@ -38,7 +38,7 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'name',
             'minimum_price',
             'maximum_price',
-            'currency',
+            'price_currency',
             'tariff_heading',
             'minimum_purchase',
             'description',
@@ -50,7 +50,7 @@ class ProductModelSerializer(serializers.ModelSerializer):
             'company',
             'minimum_price',
             'maximum_price',
-            'currency',
+            'price_currency',
         )
 
 
@@ -153,7 +153,7 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         company = self.context['company']
         images = None
         certificates = None
-        product_pricing = None
+        currency = None
 
         if 'images' in data:
             images = data.pop('images')
@@ -162,14 +162,14 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             certificates = data.pop('certificates')
 
         currency_id = data.pop('currency_id')
-        
-        if currency_id:
-            maximum_price = data.pop('maximum_price') if data.get('maximum_price') else None
-            product_pricing = self.create_product_pricing( data.pop('minimum_price'), maximum_price, currency_id )
+        try:
+            currency = Currency.objects.get( id = currency_id )
+        except Currency.DoesNotExist:
+            raise Exception("Theres no currency with the id provided in 'currency_id' attribute")
 
         product = Product.objects.create(
             company = company,
-            pricing = product_pricing,
+            price_currency = currency,
             **data
         )
 
@@ -194,51 +194,10 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         
         if 'certificates' in validated_data and instance:
             self.create_product_certificates(instance, validated_data.pop('certificates'))
-        
-        if 'currency_id' in validated_data or 'maximum_price' in validated_data or 'minimum_price' in validated_data:
-            maximum_price = validated_data.pop('maximum_price') if validated_data.get('maximum_price') else None
-            self.update_product_pricing( instance.pricing, validated_data.pop('minimum_price'), maximum_price, validated_data.pop('currency_id') )
 
         product_updated = super().update(instance, validated_data)     
 
         return product_updated
-
-    # Return the product pricing created
-    def create_product_pricing(self, minimum_price, maximum_price, currency_id):
-        try:
-            currency = Currency.objects.get( id = currency_id )
-        except Currency.DoesNotExist:
-            raise Exception("Theres no currency with the id provided in 'currency_id' attribute")
-
-        if currency:
-            return ProductPricing.objects.create( 
-                minimum_price = minimum_price, 
-                maximum_price = maximum_price,
-                currency = currency
-            )
-
-        return None
-
-    # Return the product pricing updated
-    def update_product_pricing(self, pricing, minimum_price, maximum_price, currency_id):
-        currency = None
-
-        if currency_id:
-            try:
-                currency = Currency.objects.get( id = currency_id )
-            except Currency.DoesNotExist:
-                raise Exception("Theres no currency with the id provided in 'currency_id' attribute")
-
-        if minimum_price:
-            pricing.minimum_price = minimum_price
-        
-        if maximum_price:
-            pricing.maximum_price = maximum_price
-
-        if currency:
-            pricing.currency = currency
-        
-        return pricing.save()
 
     # certificates is an array with the ids of the certificates
     # product is the instance created previously
