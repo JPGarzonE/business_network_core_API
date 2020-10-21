@@ -3,7 +3,7 @@ from companies.models import Product
 from market.models import ShowcaseProduct, ShowcaseSection
 
 # Signals
-from companies.signals import post_product_delete
+from companies.signals import post_product_delete, post_product_create
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -18,8 +18,8 @@ def get_showcase_section(name):
 
 
 def create_showcase_product(instance):
-    principal_image = instance.images.first() if instance.images and instance.images.first() else None
     showcase_section = get_showcase_section(name = instance.category)
+    principal_image = instance.images.first() if instance.images and instance.images.first() else None
 
     ShowcaseProduct.objects.create(
         name = instance.name,
@@ -35,7 +35,7 @@ def create_showcase_product(instance):
 
 def update_showcase_product(instance, showcase_product):
     principal_image = instance.images.first() if instance.images and instance.images.first() else None
-    
+
     if not showcase_product.company_name:
         showcase_product.company_name = instance.company.name
     if not showcase_product.company_username:
@@ -50,13 +50,18 @@ def update_showcase_product(instance, showcase_product):
 
 
 @receiver(post_save, sender=Product)
-def sync_showcase_product(sender, instance, created, **kwargs):
+def sync_showcase_update_product(sender, instance, created, **kwargs):
     showcase_product = ShowcaseProduct.objects.filter( product = instance ).first()
 
-    if created or showcase_product is None:
-        create_showcase_product(instance)
-    else:
+    if not created:
         update_showcase_product(instance, showcase_product)
+
+
+@receiver(post_product_create, sender=Product)
+def sync_showcase_create_product(sender, instance, created, **kwargs):
+
+    if created:
+        create_showcase_product(instance)
 
 
 @receiver(post_product_delete, sender=Product)

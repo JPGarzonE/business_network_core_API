@@ -15,6 +15,9 @@ from multimedia.models import Image
 from companies.serializers import CertificateModelSerializer, CurrencyModelSerializer
 from multimedia.serializers.images import ImageModelSerializer
 
+# Signals
+from companies import signals
+
 
 class ProductModelSerializer(serializers.ModelSerializer):
     """Product model serializer."""
@@ -178,6 +181,8 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
         
         if certificates and product:
             self.create_product_certificates(product, certificates)
+
+        signals.post_product_create.send(sender = Product, instance = product, created = True)
 
         return product
 
