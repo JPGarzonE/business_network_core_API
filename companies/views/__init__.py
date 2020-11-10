@@ -4,7 +4,8 @@ from .companies import *
 from .contacts import *
 from .dnaelements import *
 from .interests import *
-from .locations import *
+from .operative_locations import *
+from .sale_locations import *
 from .products import *
 from .services import *
 from .unregistered_companies import *

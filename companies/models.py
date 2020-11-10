@@ -196,10 +196,12 @@ class Interest(models.Model):
         db_table = 'interest'
 
 
-class Location(models.Model):
+class CompanyLocation(models.Model):
+    """Location where the company operates."""
+
     id = models.BigAutoField(primary_key=True)
     country = models.CharField(max_length=50)
-    city = models.CharField(max_length=50)
+    city = models.CharField(max_length=50, blank=True, null=True)
     region = models.CharField(max_length=45, blank=True, null=True)
     address = models.CharField(max_length=45, blank=True, null=True)
     zip = models.CharField(max_length=45, blank=True, null=True)
@@ -216,7 +218,29 @@ class Location(models.Model):
     )
 
     class Meta:
-        db_table = 'location'
+        db_table = 'companylocation'
+
+
+class CompanySaleLocation(models.Model):
+    """Location where the company sales."""
+
+    id = models.BigAutoField(primary_key=True)
+    country = models.CharField(max_length=50)
+    city = models.CharField(max_length=50, blank=True, null=True)
+    region = models.CharField(max_length=45, blank=True, null=True)
+    company = models.ForeignKey(Company, models.PROTECT)
+
+    visibility = models.CharField(
+        max_length=20,
+        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
+        default = VisibilityState.OPEN.value,
+        null=False,
+        blank=False,
+    )
+
+    class Meta:
+        db_table = 'companysalelocation'
+
 
 
 class Product(models.Model):

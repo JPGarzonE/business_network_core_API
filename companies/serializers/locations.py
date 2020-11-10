@@ -7,18 +7,18 @@ from rest_framework import serializers
 from django.db import transaction
 
 # Models
-from companies.models import Location, Image
+from companies.models import CompanyLocation, CompanySaleLocation, Image
 from multimedia.serializers.images import ImageModelSerializer
 
-class LocationModelSerializer(serializers.ModelSerializer):
-    """Location model serializer."""
+class CompanyLocationModelSerializer(serializers.ModelSerializer):
+    """Company Location model serializer."""
 
     headquarters_image = ImageModelSerializer()
 
     class Meta:
         """Location meta class."""
 
-        model = Location
+        model = CompanyLocation
 
         fields = (
             'id',
@@ -38,6 +38,27 @@ class LocationModelSerializer(serializers.ModelSerializer):
         )
 
 
+class CompanySaleLocationModelSerializer(serializers.ModelSerializer):
+    """Company Sale Location model serializer."""
+
+    class Meta:
+        """Company Sale Location meta class."""
+
+        model = CompanyLocation
+
+        fields = (
+            'id',
+            'company',
+            'country',
+            'city',
+            'region'
+        )
+
+        read_only_fields = (
+            'company',
+        )
+
+
 class HandleCompanyLocationSerializer(serializers.ModelSerializer):
     """Create and update company location"""
 
@@ -50,7 +71,10 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
 
     city = serializers.CharField(
         min_length = 1,
-        max_length = 40
+        max_length = 40,
+        required = False,
+        allow_null = True,
+        allow_blank = True
     )
 
     region = serializers.CharField(
@@ -83,9 +107,9 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
         help_text = "Attribute to indicate if its the main location of a user (Company)")
 
     class Meta:
-        """Location meta class."""
+        """Company Location meta class."""
 
-        model = Location
+        model = CompanyLocation
 
         fields = (
             'country',
@@ -102,7 +126,7 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
         """Create new company location."""
         company = self.context['company']
 
-        first_principal_location = Location.objects.filter( company = company, principal = True )
+        first_principal_location = CompanyLocation.objects.filter( company = company, principal = True )
 
         if data.get("principal"):
             principal = data.pop("principal")
@@ -126,7 +150,7 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
             except Image.DoesNotExist:
                 raise Exception("Theres no image with the id provided in 'headquarters_image_id'")
 
-        location = Location.objects.create(
+        location = CompanyLocation.objects.create(
             company = company,
             principal = principal,
             **data
@@ -134,7 +158,6 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
         
         if headquarters_image:
             location.headquarters_image = headquarters_image
-            print(location.headquarters_image)
             location.save()
 
         return location
@@ -146,7 +169,7 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
         principal = validated_data.get("principal")
 
         if principal is True:
-            first_principal_location = Location.objects.filter( company = company, principal = True )
+            first_principal_location = CompanyLocation.objects.filter( company = company, principal = True )
 
             if first_principal_location:
                 for location in first_principal_location:
@@ -165,3 +188,53 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
             instance.headquarters_image = headquarters_image
 
         return super().update(instance, validated_data)
+
+
+class HandleCompanySaleLocationSerializer(serializers.ModelSerializer):
+    """Creates and update company sales location."""
+
+    requires_context = True
+
+    country = serializers.CharField(
+        min_length = 2,
+        max_length = 40
+    )
+
+    city = serializers.CharField(
+        min_length = 1,
+        max_length = 40,
+        required = False,
+        allow_null = True,
+        allow_blank = True
+    )
+
+    region = serializers.CharField(
+        min_length = 2,
+        max_length = 40,
+        required = False,
+        allow_null = True,
+        allow_blank = True
+    )
+
+    class Meta:
+        """Company Sale Location meta class."""
+
+        model = CompanyLocation
+
+        fields = (
+            'country',
+            'city',
+            'region'
+        )
+
+    def create(self, data):
+        """Create new company sale location."""
+
+        company = self.context['company']
+
+        location = CompanySaleLocation.objects.create(
+            company = company,
+            **data
+        )
+
+        return location

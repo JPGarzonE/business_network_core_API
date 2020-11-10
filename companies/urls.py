@@ -24,8 +24,13 @@ router.register(
 )
 router.register(
     'companies/(?P<username>[\w.]+)/locations',
-    LocationViewSet,
-    basename = 'location'
+    CompanyLocationViewSet,
+    basename = 'Operative location'
+)
+router.register(
+    'companies/(?P<username>[\w.]+)/sale-locations',
+    CompanySaleLocationViewSet,
+    basename = 'Sale location'
 )
 router.register(
     'companies/(?P<username>[\w.]+)/contacts',

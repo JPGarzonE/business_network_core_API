@@ -15,33 +15,33 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
-from companies.models import Company, Location, VisibilityState
+from companies.models import Company, CompanyLocation, VisibilityState
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Serializers
-from companies.serializers import LocationModelSerializer, HandleCompanyLocationSerializer
+from companies.serializers import CompanyLocationModelSerializer, HandleCompanyLocationSerializer
 
 # Utils
 from distutils.util import strtobool
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List locations", tags = ["Locations"],
-    operation_description = "Endpoint to list all the locations of a company user" ,
+@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List company operative locations", tags = ["Locations"],
+    operation_description = "Endpoint to list all the locations where a company operates." ,
     manual_parameters = [ openapi.Parameter(name = "principal", default = False, in_ = openapi.IN_QUERY, type = "Boolean",
     description = "Filter the locations depending if they are principal or secondary locations. If its true, return the main location of the company") ], 
     responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
 ))
-class LocationViewSet(mixins.ListModelMixin,
+class CompanyLocationViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
-    """Location view set"""
+    """Company Location view set"""
 
-    serializer_class = LocationModelSerializer
+    serializer_class = CompanyLocationModelSerializer
     company = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -49,7 +49,7 @@ class LocationViewSet(mixins.ListModelMixin,
         username = kwargs['username']
         self.company = get_object_or_404(Company, user__username = username)
 
-        return super(LocationViewSet, self).dispatch(request, *args, **kwargs)
+        return super(CompanyLocationViewSet, self).dispatch(request, *args, **kwargs)
 
     def get_account_entity(self):
         """Return the entity father of the data."""
@@ -75,13 +75,13 @@ class LocationViewSet(mixins.ListModelMixin,
         if principal:
             principal = bool( strtobool(principal) )
 
-            return Location.objects.filter(
+            return CompanyLocation.objects.filter(
                 company = self.company,
                 visibility = VisibilityState.OPEN.value,
                 principal = principal
             )
         else:
-            return Location.objects.filter(
+            return CompanyLocation.objects.filter(
                 company = self.company,
                 visibility = VisibilityState.OPEN.value
             )
@@ -98,13 +98,13 @@ class LocationViewSet(mixins.ListModelMixin,
                 data = {"detail": "Query param 'principal' must be a boolean value"}
                 return Response(data, status = status.HTTP_400_BAD_REQUEST)
 
-        return super(LocationViewSet, self).list(request, *args, **kwargs)
+        return super(CompanyLocationViewSet, self).list(request, *args, **kwargs)
 
 
     def get_object(self):
         """Return the location by the id"""
         location = get_object_or_404(
-            Location,
+            CompanyLocation,
             id = self.kwargs['pk'],
             visibility = VisibilityState.OPEN.value
         )
@@ -113,10 +113,10 @@ class LocationViewSet(mixins.ListModelMixin,
 
     def perform_destroy(self, instance):
         """Disable location."""
-        instance.visibility = 'Deleted'
+        instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
-    @swagger_auto_schema( operation_id = "Partial update location", tags = ["Locations"], request_body = LocationModelSerializer,
+    @swagger_auto_schema( operation_id = "Partial update location", tags = ["Locations"], request_body = CompanyLocationModelSerializer,
         responses = { 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
@@ -173,7 +173,7 @@ class LocationViewSet(mixins.ListModelMixin,
         responses = { 404: openapi.Response("Not Found")}, security = [{ "api_key": [] }])
     def retrieve(self, request, *args, **kwargs):
         """Endpoint to retrieve a location by its id"""
-        response = super(LocationViewSet, self).retrieve(request, *args, **kwargs)
+        response = super(CompanyLocationViewSet, self).retrieve(request, *args, **kwargs)
 
         data = response.data
         data_status = status.HTTP_200_OK
