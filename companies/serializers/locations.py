@@ -38,6 +38,25 @@ class CompanyLocationModelSerializer(serializers.ModelSerializer):
         )
 
 
+class CompanyLocationNestedModelSerializer(serializers.ModelSerializer):
+    """Company location nested model serializer."""
+
+    class Meta:
+        """Location meta class."""
+
+        model = CompanyLocation
+
+        fields = (
+            'id',
+            'country',
+            'city',
+            'region',
+            'address',
+            'zip',
+            'principal',
+        )
+
+
 class CompanySaleLocationModelSerializer(serializers.ModelSerializer):
     """Company Sale Location model serializer."""
 
@@ -57,6 +76,33 @@ class CompanySaleLocationModelSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'company',
         )
+
+
+class UpdateCompanySummarySaleLocationSerializer(serializers.Serializer):
+    """Company Sale Location serializer for updating company summary"""
+
+    id = serializers.IntegerField()
+
+    country = serializers.CharField(
+        min_length = 2,
+        max_length = 40
+    )
+
+    city = serializers.CharField(
+        min_length = 1,
+        max_length = 40,
+        required = False,
+        allow_null = True,
+        allow_blank = True
+    )
+
+    region = serializers.CharField(
+        min_length = 2,
+        max_length = 40,
+        required = False,
+        allow_null = True,
+        allow_blank = True
+    )
 
 
 class HandleCompanyLocationSerializer(serializers.ModelSerializer):
