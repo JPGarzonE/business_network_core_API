@@ -35,19 +35,22 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
     phone = serializers.CharField(
         min_length = 6,
         max_length = 15,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     ext_phone = serializers.CharField(
         min_length = 1,
         max_length = 5,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     email = serializers.CharField(
         min_length = 7,
         max_length = 60,
-        required = False
+        required = False,
+        allow_null = True
     )
 
     principal = serializers.BooleanField(required = False)
@@ -87,7 +90,7 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
         contact = Contact.objects.create(
             company = company,
             principal = principal,
-            **data,
+            **data
         )
 
         return contact

@@ -75,6 +75,8 @@ urlpatterns = [
 
     path('certificates/<int:pk>/', CertificateDetailView.as_view()),
 
+    path('companies/<username>/summary/', CompanySummaryViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'})),
+
     path('companies/<username>/relationships/unregistered/', ListUnregisteredRelationships.as_view()),
 
     path('dnaelements/<int:pk>/', DnaelementDetailView.as_view()),
