@@ -89,11 +89,17 @@ class ProductViewSet(mixins.ListModelMixin,
         operation_description = "Endpoint to list all the products of a company",
         responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
     )
-    def list(self, request):
-        queryset = self.get_queryset()
-        serializer = ProductOverviewModelSerializer(queryset, many = True)
+    def list(self, request, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
 
-        return Response(serializer.data, status = status.HTTP_201_CREATED)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = ProductOverviewModelSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = ProductOverviewModelSerializer(queryset, many=True)
+
+        return Response(serializer.data, status = status.HTTP_200_OK)
 
     @transaction.atomic
     def perform_destroy(self, instance):
