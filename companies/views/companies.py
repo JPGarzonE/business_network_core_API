@@ -164,7 +164,6 @@ class CompanySummaryViewSet(mixins.RetrieveModelMixin,
             data = self.get_serializer(company).data
             data_status = status.HTTP_200_OK
         except Exception as e:
-            raise e
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
         

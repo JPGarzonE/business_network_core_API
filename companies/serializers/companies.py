@@ -26,40 +26,12 @@ from companies.serializers.contacts import ContactModelSerializer, HandleCompany
 
 class CompanyModelSerializer(serializers.ModelSerializer):
 
-    name = serializers.CharField(
-        max_length=60,
-        validators=[UniqueValidator(queryset=Company.objects.all())]
-    )
-
-    nit = RegexValidator(
-        regex = r'(\d{9,9}((.)\d)?)',
-        message = "El nit debe estar acorde al formato de la registraduria"
-    )
-
-    industry = serializers.CharField(max_length=60)
-
     logo = ImageModelSerializer(required = False)
-
-    role = serializers.CharField(max_length=50, required = False)
-
-    priority = serializers.CharField(max_length=50, required = False)
-
-    description = serializers.CharField(
-        max_length = 150,
-        required = False,
-        allow_null = True
-    )
-
-    web_url = serializers.CharField(
-        max_length = 70,
-        required = False,
-        allow_null = True
-    )
 
     class Meta:
         model = Company
-        fields = ('id', 'name', 'nit', 'industry', 'logo',
-            'role', 'priority', 'web_url', 'description')
+        fields = ('id', 'name', 'nit', 'industry', 'logo', 'role', 'web_url', 
+            'description' , 'principal_contact', 'principal_location')
 
 
 class SignupCompanyModelSerializer(serializers.ModelSerializer):
@@ -87,6 +59,23 @@ class SignupCompanyModelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ('id', 'name', 'nit', 'industry')
+
+
+class ProductCompanyModelSerializer(serializers.ModelSerializer):
+    """Model serializer for display the company in the product detail."""
+
+    principal_contact = ContactModelSerializer()
+
+    class Meta:
+        
+        model = Company
+
+        fields = (
+            'id',
+            'name',
+            'user__username',
+            'principal_contact'
+        )
 
 
 class UpdateCompanySerializer(serializers.ModelSerializer):
@@ -149,61 +138,24 @@ class UpdateCompanySerializer(serializers.ModelSerializer):
 class CompanySummarySerializer(serializers.ModelSerializer):
     """Serializer of the identity summary of a company."""
 
-    name = serializers.CharField(
-        max_length=60,
-        validators=[UniqueValidator(queryset=Company.objects.all())]
-    )
+    principal_location = CompanyLocationNestedModelSerializer()
 
-    industry = serializers.CharField(max_length=60)
-
-    description = serializers.CharField(
-        max_length = 150,
-        required = False,
-        allow_null = True
-    )
-
-    web_url = serializers.CharField(
-        max_length = 70,
-        required = False,
-        allow_null = True
-    )
-
-    principal_location = serializers.SerializerMethodField()
+    principal_contact = ContactModelSerializer()
 
     sale_locations = serializers.SerializerMethodField()
-
-    contact_channel = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
 
         fields = ('id', 'name', 'industry', 'description', 'web_url',
-            'principal_location', 'sale_locations', 'contact_channel')
+            'principal_location', 'principal_contact', 'sale_locations')
 
-
-    def get_principal_location(self, instance):
-        try:
-            company_location = CompanyLocation.objects.get( company = instance, visibility = VisibilityState.OPEN.value, 
-                principal = True )
-
-            return CompanyLocationNestedModelSerializer(company_location).data
-        except CompanyLocation.DoesNotExist:
-            return None
 
     def get_sale_locations(self, instance):
         company_sale_locations = CompanySaleLocation.objects.filter( 
             company = instance, visibility = VisibilityState.OPEN.value)
         
         return CompanySaleLocationModelSerializer(company_sale_locations, many = True).data
-
-    def get_contact_channel(self, instance):
-        try:
-            contact_channel = Contact.objects.get( company = instance, visibility = VisibilityState.OPEN.value,
-                principal = True )
-
-            return ContactModelSerializer(contact_channel).data            
-        except Contact.DoesNotExist:
-            return None
 
 
 class UpdateCompanySummarySerializer(serializers.ModelSerializer):
@@ -230,17 +182,17 @@ class UpdateCompanySummarySerializer(serializers.ModelSerializer):
         allow_null = True
     )
 
-    principal_location = CompanyLocationNestedModelSerializer(required = False)
+    principal_location = HandleCompanyLocationSerializer(required = False)
+
+    principal_contact = ContactModelSerializer(required = False)
 
     sale_locations = UpdateCompanySummarySaleLocationSerializer(many = True, required = False)
-
-    contact_channel = ContactModelSerializer(required = False)
 
     class Meta:
         model = Company
 
         fields = ('name', 'industry', 'description', 'web_url',
-            'principal_location', 'sale_locations', 'contact_channel')
+            'principal_location', 'principal_contact', 'sale_locations')
 
     @transaction.atomic
     def update(self, instance, validated_data):
@@ -257,30 +209,29 @@ class UpdateCompanySummarySerializer(serializers.ModelSerializer):
             sale_locations = validated_data.pop("sale_locations")
             self.create_or_update_sale_locations(company, sale_locations)
 
-        if 'contact_channel' in validated_data:
-            contact_channel = validated_data.pop("contact_channel")
-            self.create_or_update_contact_channel(company, contact_channel)
+        if 'pricipal_contact' in validated_data:
+            pricipal_contact = validated_data.pop("pricipal_contact")
+            self.create_or_update_principal_contact(company, pricipal_contact)
 
         return super().update(instance, validated_data)
 
     
     def create_or_update_principal_location(self, company, principal_location):
         """Create or update the principal location of the company by param."""
-        try:
-            company_location = CompanyLocation.objects.get( company = company, principal = True )
-            
+        company_location = company.principal_location
+
+        if company_location:
             location_serializer = HandleCompanyLocationSerializer(
                 instance = company_location, data = principal_location, 
                 partial = True, context = {"company": company}
             )
-            location_serializer.is_valid(raise_exception = True)
-            location_serializer.save()
-        except CompanyLocation.DoesNotExist:
+        else:
             location_serializer = HandleCompanyLocationSerializer(
                 data = principal_location, context = {"company": company}
             )
-            location_serializer.is_valid(raise_exception = True)
-            location_serializer.save()
+
+        location_serializer.is_valid(raise_exception = True)
+        location_serializer.save()
 
     
     def create_or_update_sale_locations(self, company, sale_locations):
@@ -304,20 +255,19 @@ class UpdateCompanySummarySerializer(serializers.ModelSerializer):
                     sale_location_serializer.save()
 
 
-    def create_or_update_contact_channel(self, company, contact_channel):
+    def create_or_update_principal_contact(self, company, principal_contact):
         """Create or update the contact channel of the company by param."""
-        try:
-            company_contact = Contact.objects.get( company = company, principal = True )
-            
+        company_contact = company.principal_contact
+
+        if company_contact:
             contact_serializer = HandleCompanyContactSerializer(
-                instance = company_contact, data = contact_channel, 
+                instance = company_contact, data = principal_contact, 
                 partial = True, context = {"company": company}
             )
-            contact_serializer.is_valid(raise_exception = True)
-            contact_serializer.save()
-        except Contact.DoesNotExist:
+        else:
             contact_serializer = HandleCompanyContactSerializer(
-                data = contact_channel, context = {"company": company}
+                data = principal_contact, context = {"company": company}
             )
-            contact_serializer.is_valid(raise_exception = True)
-            contact_serializer.save()
+
+        contact_serializer.is_valid(raise_exception = True)
+        contact_serializer.save()

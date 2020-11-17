@@ -30,12 +30,16 @@ class Company(models.Model):
     nit = models.CharField(unique=True, max_length = 20)
     name = models.CharField(max_length=60)
     role = models.CharField(max_length=50, blank=True, null=True)
-    priority = models.CharField(max_length=50, blank=True, null=True)
     logo = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
     industry = models.CharField(max_length=60)
     web_url = models.CharField(max_length=150, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
-    
+
+    principal_contact = models.ForeignKey("Contact", on_delete=models.CASCADE, 
+        blank=True, null=True, related_name="%(class)s_principal_contact")
+    principal_location = models.ForeignKey("CompanyLocation", on_delete=models.CASCADE, 
+        blank=True, null=True, related_name="%(class)s_principal_location")
+
     visibility = models.CharField(
         max_length=20,
         choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
@@ -77,11 +81,10 @@ class CompanySocialnetwork(models.Model):
 
 class Contact(models.Model):
     id = models.BigAutoField(primary_key=True)
+    area_code = models.CharField(max_length=5, blank=True, null=True)
     phone = models.CharField(max_length = 15,blank=True, null=True)
-    ext_phone = models.CharField(max_length=5, blank=True, null=True)
-    company = models.ForeignKey(Company, models.PROTECT)
     email = models.CharField(max_length=60, blank=True, null=True)
-    principal = principal = models.BooleanField(default = False)
+    company = models.ForeignKey(Company, models.PROTECT)
 
     visibility = models.CharField(
         max_length=20,
@@ -205,9 +208,8 @@ class CompanyLocation(models.Model):
     region = models.CharField(max_length=45, blank=True, null=True)
     address = models.CharField(max_length=45, blank=True, null=True)
     zip = models.CharField(max_length=45, blank=True, null=True)
-    principal = models.BooleanField(default = False)
-    company = models.ForeignKey(Company, models.PROTECT)
     headquarters_image = models.ForeignKey(Image, models.CASCADE, blank=True, null=True)
+    company = models.ForeignKey(Company, models.PROTECT)
 
     visibility = models.CharField(
         max_length=20,
@@ -253,12 +255,15 @@ class Product(models.Model):
     maximum_price = models.DecimalField(max_digits=15, decimal_places=2, null = True, blank = True)
     price_currency = models.ForeignKey(Currency, models.PROTECT)
 
+    measurement_unit = models.CharField(max_length = 30, blank = True, null = True)
     tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
-    minimum_purchase = models.CharField(max_length=20, blank=True, null=True)
+    minimum_purchase = models.CharField(max_length=30, blank=True, null=True)
     description = models.CharField(max_length=155, blank=True, null=True)
 
     certificates = models.ManyToManyField(Certificate, through = "ProductCertificate")
-    images = models.ManyToManyField(Image, through = "ProductImage")
+    principal_image = models.ForeignKey(Image, on_delete=models.PROTECT, 
+        blank=True, null=True, related_name = '%(class)s_principal_image')
+    secondary_images = models.ManyToManyField(Image, through = "ProductImage", related_name = '%(class)s_secondary_images')
 
     visibility = models.CharField(
         max_length=20,
