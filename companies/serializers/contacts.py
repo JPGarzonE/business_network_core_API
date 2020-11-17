@@ -22,9 +22,8 @@ class ContactModelSerializer(serializers.ModelSerializer):
             'id',
             'company',
             'email',
+            'area_code',
             'phone',
-            'ext_phone',
-            'principal'
         )
 
 class HandleCompanyContactSerializer(serializers.ModelSerializer):
@@ -32,16 +31,16 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
 
     requires_context = True
 
-    phone = serializers.CharField(
-        min_length = 6,
-        max_length = 15,
+    area_code = serializers.CharField(
+        min_length = 1,
+        max_length = 5,
         required = False,
         allow_null = True
     )
 
-    ext_phone = serializers.CharField(
-        min_length = 1,
-        max_length = 5,
+    phone = serializers.CharField(
+        min_length = 6,
+        max_length = 15,
         required = False,
         allow_null = True
     )
@@ -62,8 +61,8 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
 
         fields = (
             'email',
+            'area_code',
             'phone',
-            'ext_phone',
             'principal'
         )
 
@@ -71,27 +70,17 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
     def create(self, data):
         """Create new company contacts."""
         company = self.context['company']
-
-        first_principal_contact = Contact.objects.filter( company = company, principal = True )
-
-        if data.get("principal"):
-            principal = data.pop("principal")
-
-            if first_principal_contact:
-                first_principal_contact = first_principal_contact[0]
-                first_principal_contact.principal = False
-                first_principal_contact.save()
-        else:
-            if not first_principal_contact:
-                principal = True
-            else:
-                principal = False
+        
+        principal = data.pop("principal") if data.get("principal") else not bool(company.principal_contact)
         
         contact = Contact.objects.create(
             company = company,
-            principal = principal,
             **data
         )
+
+        if principal is True:
+            company.principal_contact = contact
+            company.save()
 
         return contact
 
@@ -99,16 +88,13 @@ class HandleCompanyContactSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Update a company location."""
         company = self.context['company']
-        principal = validated_data.get("principal")
 
+        principal = validated_data.pop("principal") if validated_data.get("principal") else not bool(company.principal_contact)
+
+        updated_contact = super().update(instance, validated_data)
+        
         if principal is True:
-            first_principal_contact = Contact.objects.filter( company = company, principal = True )
+            company.principal_contact = updated_contact
+            company.save()
 
-            if first_principal_contact:
-                for contact in first_principal_contact:
-                    contact.principal = False
-                    contact.save()
-
-            instance.principal = validated_data.pop("principal")
-
-        return super().update(instance, validated_data)
+        return updated_contact

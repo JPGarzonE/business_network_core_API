@@ -43,6 +43,7 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
 
     serializer_class = CompanyLocationModelSerializer
     company = None
+    principal_location = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""
@@ -70,16 +71,19 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
 
     def get_queryset(self):
         """Return company locations"""
-        principal = self.request.query_params.get('principal')
-        
-        if principal:
-            principal = bool( strtobool(principal) )
+        principal = self.principal_location if self.principal_location else None
+        principal_location_id = self.company.principal_location.id if self.company.principal_location else None
 
+        if principal is True:
+            return CompanyLocation.objects.filter(
+                id = principal_location_id
+            )
+
+        elif principal is False:
             return CompanyLocation.objects.filter(
                 company = self.company,
-                visibility = VisibilityState.OPEN.value,
-                principal = principal
-            )
+                visibility = VisibilityState.OPEN.value
+            ).exclude( id = principal_location_id )
         else:
             return CompanyLocation.objects.filter(
                 company = self.company,
@@ -93,7 +97,7 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
 
         if principal:
             try:
-                bool( strtobool(principal) )
+                self.principal_location = bool( strtobool(principal) )
             except ValueError:
                 data = {"detail": "Query param 'principal' must be a boolean value"}
                 return Response(data, status = status.HTTP_400_BAD_REQUEST)

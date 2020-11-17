@@ -24,15 +24,11 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from companies.permissions import IsCompanyAccountOwner, IsDataOwner, IsPredominantEntiyOwner
 
 # Serializers
-from companies.serializers import ProductModelSerializer, HandleCompanyProductSerializer
+from companies.serializers import ProductDetailModelSerializer, ProductOverviewModelSerializer, HandleCompanyProductSerializer
 
 # Signals
 from companies import signals
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List products", tags = ["Products"],
-    operation_description = "Endpoint to list all the products of a company",
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
-))
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
         operation_description = "Endpoint to delete a product by its id",
         responses = { 204: "No Content", 404: openapi.Response("Not Found"),
@@ -46,7 +42,7 @@ class ProductViewSet(mixins.ListModelMixin,
                       viewsets.GenericViewSet):
     """Product view set"""
 
-    serializer_class = ProductModelSerializer
+    serializer_class = ProductDetailModelSerializer
     company = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -89,6 +85,16 @@ class ProductViewSet(mixins.ListModelMixin,
 
         return product
 
+    @swagger_auto_schema( operation_id = "List products", tags = ["Products"],
+        operation_description = "Endpoint to list all the products of a company",
+        responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+    )
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = ProductOverviewModelSerializer(queryset, many = True)
+
+        return Response(serializer.data, status = status.HTTP_201_CREATED)
+
     @transaction.atomic
     def perform_destroy(self, instance):
         """Disable product."""
@@ -105,7 +111,7 @@ class ProductViewSet(mixins.ListModelMixin,
         signals.post_product_delete.send(sender=Product, instance = instance)
 
     @swagger_auto_schema( tags = ["Products"], request_body = HandleCompanyProductSerializer,
-        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),
+        responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"minimum_purchase": ["This field may not be null"]} 
@@ -135,7 +141,7 @@ class ProductViewSet(mixins.ListModelMixin,
         return Response(data, status = data_status)
 
     @swagger_auto_schema( tags = ["Products"], request_body = HandleCompanyProductSerializer,
-        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found"),
+        responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"name": ["This field may not be null"]}
@@ -176,12 +182,12 @@ class ProductDetailView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema( operation_id = "Retrieve a product", tags = ["Products"],
-        responses = { 200: ProductModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
+        responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
     def get(self, request, pk, format = None):
         """Endpoint to retrieve the product by the id"""
         try:
             product = self.get_object(pk)
-            serializer = ProductModelSerializer(product)
+            serializer = ProductDetailModelSerializer(product)
 
             data = serializer.data
             data_status = status.HTTP_200_OK

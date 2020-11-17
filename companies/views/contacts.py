@@ -29,6 +29,7 @@ class ContactViewSet(mixins.ListModelMixin,
 
     serializer_class = ContactModelSerializer
     company = None
+    principal_contact = None
 
     def dispatch(self, request, *args, **kwargs):
         """Verifiy that the company exists"""
@@ -55,17 +56,20 @@ class ContactViewSet(mixins.ListModelMixin,
 
     def get_queryset(self):
         """Return company contacts"""
-        principal = self.request.query_params.get('principal')
-        
+        principal = self.principal_contact if self.principal_contact else None
+        principal_contact_id = self.company.principal_contact.id if self.company.principal_contact else None
 
-        if principal:
-            principal = bool( strtobool(principal) )
+        if principal is True:
+            return Contact.objects.filter( 
+                id = principal_contact_id
+            )
 
+        elif principal is False:
             return Contact.objects.filter(
                 company = self.company,
-                visibility = VisibilityState.OPEN.value,
-                principal = principal
-            )
+                visibility = VisibilityState.OPEN.value
+            ).exclude( id = principal_contact_id )
+
         else:
             return Contact.objects.filter(
                 company = self.company,
@@ -78,7 +82,7 @@ class ContactViewSet(mixins.ListModelMixin,
 
         if principal:
             try:
-                bool( strtobool(principal) )
+                self.principal_contact = bool( strtobool(principal) )
             except ValueError:
                 data = {"detail": "Query param 'principal' must be a boolean value"}
                 return Response(data, status = status.HTTP_400_BAD_REQUEST)

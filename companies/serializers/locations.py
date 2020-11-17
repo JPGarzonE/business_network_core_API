@@ -29,7 +29,6 @@ class CompanyLocationModelSerializer(serializers.ModelSerializer):
             'address',
             'zip',
             'headquarters_image',
-            'principal',
         )
 
         read_only_fields = (
@@ -53,7 +52,6 @@ class CompanyLocationNestedModelSerializer(serializers.ModelSerializer):
             'region',
             'address',
             'zip',
-            'principal',
         )
 
 
@@ -171,24 +169,10 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
     def create(self, data):
         """Create new company location."""
         company = self.context['company']
-
-        first_principal_location = CompanyLocation.objects.filter( company = company, principal = True )
-
-        if data.get("principal"):
-            principal = data.pop("principal")
-            
-            if first_principal_location:
-                first_principal_location = first_principal_location[0]
-                first_principal_location.principal = False
-                first_principal_location.save()
-        else:
-            if not first_principal_location:
-                principal = True
-            else:
-                principal = False
-
+        
+        principal = data.pop("principal") if data.get("principal") else not bool(company.principal_location)
+        
         headquarters_image = None
-
         if data.get('headquarters_image_id'):
             image_id = data.pop("headquarters_image_id")
             try:
@@ -198,9 +182,12 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
 
         location = CompanyLocation.objects.create(
             company = company,
-            principal = principal,
             **data
         )
+
+        if principal is True:
+            company.principal_location = location
+            company.save()
         
         if headquarters_image:
             location.headquarters_image = headquarters_image
@@ -212,17 +199,6 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Update a company location."""
         company = self.context['company']
-        principal = validated_data.get("principal")
-
-        if principal is True:
-            first_principal_location = CompanyLocation.objects.filter( company = company, principal = True )
-
-            if first_principal_location:
-                for location in first_principal_location:
-                    location.principal = False
-                    location.save()
-
-            instance.principal = validated_data.pop("principal")
 
         if validated_data.get('headquarters_image_id'):
             image_id = validated_data.pop("headquarters_image_id")
@@ -233,7 +209,15 @@ class HandleCompanyLocationSerializer(serializers.ModelSerializer):
 
             instance.headquarters_image = headquarters_image
 
-        return super().update(instance, validated_data)
+        principal = validated_data.pop("principal") if validated_data.get("principal") else not bool(company.principal_location)
+
+        updated_location = super().update(instance, validated_data)
+
+        if principal is True:
+            company.principal_location = updated_location
+            company.save()
+
+        return updated_location
 
 
 class HandleCompanySaleLocationSerializer(serializers.ModelSerializer):
