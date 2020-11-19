@@ -9,3 +9,5 @@ from .products import *
 from .services import *
 from .unregistered_companies import *
 from .unregistered_relationships import *
+
+from .profiles import *

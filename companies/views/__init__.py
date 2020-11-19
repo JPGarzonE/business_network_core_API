@@ -7,6 +7,7 @@ from .interests import *
 from .operative_locations import *
 from .sale_locations import *
 from .products import *
+from .profiles import *
 from .services import *
 from .unregistered_companies import *
 from .unregistered_relationships import *

@@ -39,6 +39,7 @@ class Company(models.Model):
         blank=True, null=True, related_name="%(class)s_principal_contact")
     principal_location = models.ForeignKey("CompanyLocation", on_delete=models.CASCADE, 
         blank=True, null=True, related_name="%(class)s_principal_location")
+    certificates = models.ManyToManyField(Certificate, through = "CompanyCertificate")
 
     visibility = models.CharField(
         max_length=20,

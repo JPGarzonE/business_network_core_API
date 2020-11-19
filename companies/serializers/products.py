@@ -160,6 +160,7 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
     )
 
     principal_image_id = serializers.IntegerField(
+        required = False,
         help_text = "Id of the principal image of the product (previosuly uploaded)"
     )
 
@@ -247,6 +248,8 @@ class HandleCompanyProductSerializer(serializers.ModelSerializer):
             self.create_product_certificates(instance, validated_data.pop('certificates'))
 
         product_updated = super().update(instance, validated_data)     
+
+        signals.post_product_update.send(sender = Product, instance = product_updated, created = False)
 
         return product_updated
 

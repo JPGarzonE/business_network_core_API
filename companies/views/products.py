@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 # Django
 from django.db import transaction
@@ -18,6 +19,7 @@ from drf_yasg import openapi
 
 # Models
 from companies.models import Company, Product, ProductCertificate, ProductImage, VisibilityState
+from multimedia.models import Image
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -140,6 +142,8 @@ class ProductViewSet(mixins.ListModelMixin,
 
             data = self.get_serializer(product).data
             data_status = status.HTTP_201_CREATED
+        except ValidationError as e:
+            raise e
         except Exception as e:
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
@@ -173,6 +177,8 @@ class ProductViewSet(mixins.ListModelMixin,
 
             data = self.get_serializer(product).data
             data_status = status.HTTP_200_OK
+        except ValidationError as e:
+            raise e
         except Exception as e:
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
@@ -218,6 +224,11 @@ class DeleteProductImageView(APIView):
 
     permission_classes = [IsAuthenticated, IsPredominantEntiyOwner]
 
+    product = None
+    image = None
+    product_image = None
+    is_principal_image = None
+
     @swagger_auto_schema( tags = ["Products"],
         responses = { 204: openapi.Response("No Content", examples = {"application/json": 
             {"detail": "Succesfully deleted"} }), 404: openapi.Response("Not Found"),
@@ -233,8 +244,16 @@ class DeleteProductImageView(APIView):
         If you want to delete definitely the image in your galery do it through the Image delete endpoint."""
 
         try:
-            product_image = self.product_image if self.product_image else self.get_object()
-            product_image.delete()
+            self.product = Product.objects.get( id = product_id ) if not self.product else self.product
+            self.image = Image.objects.get( id = image_id ) if not self.image else self.image
+            
+            product_image = self.get_object()
+            
+            if self.is_principal_image is True:
+                self.product.principal_image = None
+                self.product.save()
+            else:
+                product_image.delete()
 
             data = {"detail": "Succesfully deleted"}
             data_status = status.HTTP_204_NO_CONTENT
@@ -249,18 +268,32 @@ class DeleteProductImageView(APIView):
         image_id = self.kwargs.get('image_id')
 
         try:
-            self.product_image = ProductImage.objects.get(
-                product__id = product_id,
-                image__id = image_id
+            self.product = Product.objects.get( id = product_id )
+        except Product.DoesNotExist:
+            raise Exception("Product not found with the id = {}".format(product_id))
+
+        try:
+            self.image = Image.objects.get( id = image_id )
+        except Image.DoesNotExist:
+            raise Exception("Image not found with the id = {}".format(image_id))
+
+        if self.product.principal_image == self.image:
+            self.is_principal_image = True
+            return self.product.principal_image
+
+        try:
+            product_image = ProductImage.objects.get(
+                product = self.product,
+                image = self.image
             )
         except ProductImage.DoesNotExist:
-            raise Exception("Product image not found with the both ids provided")
+            raise Exception("The product with the id {} has no image with id {}".format(product_id, image_id))
 
-        return self.product_image
+        return product_image
 
     def get_predominant_entity_owner(self):
         product_image = self.get_object()
-        product = product_image.product
+        product = self.product if  self.is_principal_image is True else product_image.product
         company = product.company
 
         return company

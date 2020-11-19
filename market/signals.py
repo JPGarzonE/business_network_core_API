@@ -3,8 +3,7 @@ from companies.models import Product
 from market.models import ShowcaseProduct, ShowcaseSection
 
 # Signals
-from companies.signals import post_product_delete, post_product_create
-from django.db.models.signals import post_save
+from companies.signals import post_product_delete, post_product_create, post_product_update
 from django.dispatch import receiver
 
 
@@ -19,13 +18,12 @@ def get_showcase_section(name):
 
 def create_showcase_product(instance):
     showcase_section = get_showcase_section(name = instance.category)
-    principal_image = instance.images.first() if instance.images and instance.images.first() else None
 
     ShowcaseProduct.objects.create(
         name = instance.name,
         tariff_heading = instance.tariff_heading,
         description = instance.description,
-        principal_image = principal_image,
+        principal_image = instance.principal_image,
         product = instance,
         showcase_section = showcase_section,
         company_name = instance.company.name,
@@ -34,8 +32,6 @@ def create_showcase_product(instance):
 
 
 def update_showcase_product(instance, showcase_product):
-    principal_image = instance.images.first() if instance.images and instance.images.first() else None
-
     if not showcase_product.company_name:
         showcase_product.company_name = instance.company.name
     if not showcase_product.company_username:
@@ -44,12 +40,12 @@ def update_showcase_product(instance, showcase_product):
     showcase_product.name = instance.name
     showcase_product.tariff_heading = instance.tariff_heading
     showcase_product.description = instance.description
-    showcase_product.principal_image = principal_image
+    showcase_product.principal_image = instance.principal_image
     showcase_product.showcase_section = get_showcase_section(name = instance.category)
     showcase_product.save()
 
 
-@receiver(post_save, sender=Product)
+@receiver(post_product_update, sender=Product)
 def sync_showcase_update_product(sender, instance, created, **kwargs):
     showcase_product = ShowcaseProduct.objects.filter( product = instance ).first()
 

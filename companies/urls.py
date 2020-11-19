@@ -2,7 +2,15 @@
 
 from django.urls import include, path
 from rest_framework import routers
-from companies.views import *
+from companies.views import (
+    UnregisteredCompanyViewSet, UnregisteredRelationshipViewSet, CompanyViewSet,
+    CompanyLocationViewSet, CompanySaleLocationViewSet, ContactViewSet,
+    ProductViewSet, ServiceViewSet, DnaelementViewSet, InterestViewSet,
+    CompanyCertificateViewSet, CurrencyViewSet, CertificateDetailView,
+    CompanyProfileView, CompanySummaryViewSet, ListUnregisteredRelationships,
+    DnaelementDetailView, ProductDetailView, DeleteProductCertificateView,
+    DeleteProductImageView, ServiceDetailView
+)
 
 
 router = routers.DefaultRouter()
@@ -74,6 +82,8 @@ urlpatterns = [
     path('', include(router.urls)),
 
     path('certificates/<int:pk>/', CertificateDetailView.as_view()),
+
+    path('companies/<username>/profile/', CompanyProfileView.as_view()),
 
     path('companies/<username>/summary/', CompanySummaryViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'})),
 

@@ -64,6 +64,7 @@ class SignupCompanyModelSerializer(serializers.ModelSerializer):
 class ProductCompanyModelSerializer(serializers.ModelSerializer):
     """Model serializer for display the company in the product detail."""
 
+    username = serializers.CharField(source="user.username")
     principal_contact = ContactModelSerializer()
 
     class Meta:
@@ -73,7 +74,7 @@ class ProductCompanyModelSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'name',
-            'user__username',
+            'username',
             'principal_contact'
         )
 
