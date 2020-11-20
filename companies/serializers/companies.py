@@ -210,9 +210,9 @@ class UpdateCompanySummarySerializer(serializers.ModelSerializer):
             sale_locations = validated_data.pop("sale_locations")
             self.create_or_update_sale_locations(company, sale_locations)
 
-        if 'pricipal_contact' in validated_data:
-            pricipal_contact = validated_data.pop("pricipal_contact")
-            self.create_or_update_principal_contact(company, pricipal_contact)
+        if 'principal_contact' in validated_data:
+            principal_contact = validated_data.pop("principal_contact")
+            self.create_or_update_principal_contact(company, principal_contact)
 
         return super().update(instance, validated_data)
 
