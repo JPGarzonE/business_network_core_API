@@ -25,7 +25,7 @@ from multimedia.serializers.images import ImageModelSerializer
 class ProfileCompanyModelSerializer(serializers.ModelSerializer):
 
     username = serializers.CharField(source="user.username")
-    is_verified = serializers.CharField(source="user.is_verified")
+    is_verified = serializers.BooleanField(source="user.is_verified")
     logo = ImageModelSerializer()
 
     class Meta:
