@@ -185,7 +185,7 @@ class UpdateCompanySummarySerializer(serializers.ModelSerializer):
 
     principal_location = HandleCompanyLocationSerializer(required = False)
 
-    principal_contact = ContactModelSerializer(required = False)
+    principal_contact = HandleCompanyContactSerializer(required = False)
 
     sale_locations = UpdateCompanySummarySaleLocationSerializer(many = True, required = False)
 
