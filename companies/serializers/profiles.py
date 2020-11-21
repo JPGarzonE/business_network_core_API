@@ -69,7 +69,7 @@ class SupplierProfileSerializer(serializers.Serializer):
     def get_principal_contact(self, instance):
         company = instance.get("company")
 
-        if company.principal_contact and company.principal_contact.visibility is VisibilityState.OPEN.value:
+        if company.principal_contact and company.principal_contact.visibility == VisibilityState.OPEN.value:
             return ContactModelSerializer(
                 company.principal_contact
             ).data
@@ -79,7 +79,7 @@ class SupplierProfileSerializer(serializers.Serializer):
     def get_principal_location(self, instance):
         company = instance.get("company")
 
-        if company.principal_location and company.principal_location.visibility is VisibilityState.OPEN.value:
+        if company.principal_location and company.principal_location.visibility == VisibilityState.OPEN.value:
             return CompanyLocationNestedModelSerializer(
                 company.principal_location
             ).data
