@@ -99,7 +99,7 @@ class SupplierProfileSerializer(serializers.Serializer):
 
         company_products = Product.objects.filter(
             company = company, visibility = VisibilityState.OPEN.value
-        )
+        )[:6]
         return ProductOverviewModelSerializer(company_products, many = True).data
 
     def get_certificates(self, instance):
