@@ -22,7 +22,6 @@ class DnaelementModelSerializer(serializers.ModelSerializer):
 
         fields = (
             'id',
-            'company',
             'category',
             'name',
             'description',
@@ -30,7 +29,6 @@ class DnaelementModelSerializer(serializers.ModelSerializer):
         )
 
         read_only_fields = (
-            'company',
             'image',
         )
 

@@ -31,11 +31,11 @@ from companies.serializers import (
     UpdateUnregisteredRelationshipSerializer
 )
 
-@method_decorator( name = 'retrieve', decorator = swagger_auto_schema( operation_id = "Retireve an unregistered relationship",
-         tags = ["Unregistered Relationships"],
-        operation_description = "Endpoint to retrieve an unregistered relationship by its id",
-        responses = { 200: UnregisteredRelationshipModelSerializer, 404: openapi.Response("Not Found")}, 
-        security = [{ "Anonymous": [] }]
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
+    operation_id = "Retrieve an unregistered relationship", tags = ["Unregistered Relationships"],
+    operation_description = "Endpoint to retrieve an unregistered relationship by its id",
+    responses = { 200: UnregisteredRelationshipModelSerializer, 404: openapi.Response("Not Found")}, 
+    security = []
 ))
 @method_decorator( name = 'update', decorator = swagger_auto_schema( auto_schema = None ) )
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete an unregistered relationship",
@@ -43,7 +43,7 @@ from companies.serializers import (
         operation_description = "Endpoint to delete an unregistered relationship by its id",
         responses = { 204: "No Content", 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
-        }, security = [{ "api_key": [] }]
+        }, security = [{ "api-key": [] }]
 ))
 class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
                                     mixins.RetrieveModelMixin,
@@ -95,7 +95,7 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"detail": "You can pass the unregistered_id or the unregistered object. Not both at the same time."}
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def create(self, request, *args, **kwargs):
         """Create an unregistered relationship\n
         Endpoint that creates an unregistered relationship.\n 
@@ -146,7 +146,7 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"type": ["This field may not be null"]}
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def partial_update(self, request, *args, **kwargs):
         """Update partially an unregistered relationship.\n
         It can only update the type of the unregistered relationhsip.\n
@@ -174,7 +174,7 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
 
 @method_decorator( name = 'get', decorator = swagger_auto_schema( operation_id = "List unregistered relationships", tags = ["Unregistered Relationships"], 
     operation_description = "Endpoint to list all the unregistered relationships of a company",
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+    responses = { 404: openapi.Response("Not Found") }, security = []
 ) )
 class ListUnregisteredRelationships(ListAPIView):
     """API view to list all Unregistered Relationships of a user"""

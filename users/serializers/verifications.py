@@ -54,11 +54,13 @@ def send_verification_notification_email(user, certificate_path):
     msg.send()
 
 
-
 class VerificationModelSerializer(serializers.ModelSerializer):
     """Verification model serializer."""
 
     documents = DocumentModelSerializer(many = True)
+    state = serializers.ChoiceField(
+        choices = [stateOption.value for stateOption in Verification.States]
+    )
 
     class Meta:
         """Verification meta class."""
@@ -88,7 +90,9 @@ class HandleVerificationSerializer(serializers.ModelSerializer):
     requires_context = True
 
     documents = serializers.ListField(
-       child = serializers.IntegerField()
+       child = serializers.IntegerField(),
+       help_text = """Array with the ids of the documents previously uploaded.
+        To upload documents to the platform do it through the Files endpoints."""
     )
 
     class Meta:
@@ -96,21 +100,8 @@ class HandleVerificationSerializer(serializers.ModelSerializer):
 
         model = Verification
 
-        fields = (
-            'id',
-            'state',
-            'verified',
-            'documents',
-            'application_date',
-            'finish_date',
-        )
+        fields = ('documents',)
 
-        read_only_fields = (
-            'verified',
-            'state',
-            'application_date',
-            'finish_date'
-        )
 
     @transaction.atomic
     def update(self, instance, validated_data):

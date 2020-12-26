@@ -8,15 +8,16 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets, filters, generics
 from rest_framework.response import Response
 
-# Abastract Syntax Tree
-import ast
-import json
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Models
 from market.models import ShowcaseProduct
 
 # Serializers
 from market.serializers.showcases import ShowcaseProductModelSerializer
+
 
 class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
                                     generics.ListAPIView):
@@ -26,7 +27,7 @@ class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
 
     serializer_class = ShowcaseProductModelSerializer
     filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = ['name', 'tariff_heading', 'description', 'company_name', 'company_username']
+    filterset_fields = ['name', 'tariff_heading', 'company_name', 'company_username']
 
     def get_query_fields(self):
         """Return the list of query_fields"""
@@ -68,7 +69,33 @@ class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
 
         return ShowcaseProduct.objects.filter( self.get_query_statement(query) )
 
+
+    @swagger_auto_schema( tags = ["Search"], responses = { 404: openapi.Response("Not Found") }, security = [],
+        manual_parameters = [
+            openapi.Parameter(name = "q", in_ = openapi.IN_QUERY, type = "String", description = "Search term."),
+            openapi.Parameter(name = "query_fields", in_ = openapi.IN_QUERY, type = "String", 
+                description = """
+                    Fields where the query `q` is going to be executed.\n
+                    This param accepts a list of fields separated by commas. (Ej: `query_fields=name,description,...`)\n
+                    The possible fields for searching are: `name, description, tariff_heading and company_name`.\n
+                    If this param isnt specified the query is going to be executed over all the possible fields."""
+            ),
+            openapi.Parameter(name = "name", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by name. (Exact match)"),
+            openapi.Parameter(name = "tariff_heading", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by tariff heading. (Exact match)"),
+            openapi.Parameter(name = "company_name", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by company name. (Exact match)"),
+            openapi.Parameter(name = "company_username", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by company username. (Exact match)")
+        ]
+    )
     def list(self, request, *args, **kwargs):
+        """Search Products in the Market\n
+            Endpoint to search a showcase product (A product in the platform market).\n
+            In this endpoint is possible to select over which fields is going to be executed the query with the `query_fields` param.
+        """
+
         try:
             products_queryset = self.filter_queryset(self.get_queryset())
 

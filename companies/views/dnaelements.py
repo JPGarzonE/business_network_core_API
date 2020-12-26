@@ -1,11 +1,18 @@
 """Company DNAElements views."""
 
+# Django
+from django.utils.decorators import method_decorator
+
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Models
 from companies.models import Company, Dnaelement, VisibilityState
@@ -17,10 +24,19 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 # Serializers
 from companies.serializers import DnaelementModelSerializer, HandleCompanyDnaelementSerializer
 
+
+@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List company DNA elements", tags = ["Supplier DNA"],
+    operation_description = "Endpoint to list all the DNA elements of a company",
+    responses = { 404: openapi.Response("Not Found") }, security = []
+))
+@method_decorator(name='destroy', decorator = swagger_auto_schema( operation_id = "Delete a company DNA element", tags = ["Supplier DNA"],
+    operation_description = "Endpoint to delete a DNA element of a company by username and id",
+    responses = { 404: openapi.Response("Not Found") }, security = []
+))
+@method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class DnaelementViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
-                      mixins.RetrieveModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
     """Dnaelement view set"""
@@ -73,8 +89,18 @@ class DnaelementViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
+
+    @swagger_auto_schema( tags = ["Supplier DNA"], request_body = HandleCompanyDnaelementSerializer,
+        responses = { 200: DnaelementModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"name": ["this field is required"]} 
+            })
+        }, security = [{ "api-key": [] }])
     def create(self, request, *args, **kwargs):
-        """Handle Dnaelement creation."""
+        """Create company DNA element\n
+            Endpoint to create a DNA element to a company with the username given
+        """
         try:
             dnaelement_serializer = HandleCompanyDnaelementSerializer(
                 data = request.data,
@@ -91,9 +117,19 @@ class DnaelementViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
+
+    @swagger_auto_schema( tags = ["Supplier DNA"], request_body = HandleCompanyDnaelementSerializer,
+        responses = { 200: DnaelementModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"detail": "Theres no image with the id provided in 'image_id'"} 
+            })
+        }, security = [{ "api-key": [] }])
     def partial_update(self, request, *args, **kwargs):
-        """Handle dna partial update and add a 
-        image to a dna by its id if its the case"""
+        """Partial update a company DNA element\n
+            Endpoint to partial update a DNA element of a company with a username given
+        """
+
         try:
             instance = self.get_object()
             dna_serializer = HandleCompanyDnaelementSerializer(
@@ -119,10 +155,15 @@ class DnaelementDetailView(APIView):
         Retrieve the detail of a DNAElement.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
+    @swagger_auto_schema( tags = ["Supplier DNA"],
+        responses = { 200: DnaelementModelSerializer, 404: openapi.Response("Not Found")}, security = []
+    )
     def get(self, request, pk, format = None):
-        """Return the dnaelement by the id"""
+        """Retrieve a company DNA element.\n
+            Endpoint to retrieve a DNA element by its id.
+        """
         dnaelement = self.get_object(pk)
         serializer = DnaelementModelSerializer(dnaelement)
 

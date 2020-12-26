@@ -1,11 +1,17 @@
 """Company services views."""
 
+# Django
+from django.utils.decorators import method_decorator
+
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
 
 # Models
 from companies.models import Company, Service, VisibilityState
@@ -17,6 +23,10 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 # Serializers
 from companies.serializers import ServiceModelSerializer, HandleCompanyServiceSerializer
 
+
+@method_decorator( name = 'list', decorator = swagger_auto_schema(auto_schema = None) )
+@method_decorator( name = 'update', decorator = swagger_auto_schema(auto_schema = None))
+@method_decorator( name = 'destroy', decorator = swagger_auto_schema(auto_schema = None))
 class ServiceViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
@@ -72,6 +82,8 @@ class ServiceViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
+
+    @swagger_auto_schema(auto_schema = None)
     def create(self, request, *args, **kwargs):
         """Handle Service creation."""
         service_serializer = HandleCompanyServiceSerializer(
@@ -86,6 +98,8 @@ class ServiceViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
+
+    @swagger_auto_schema(auto_schema = None)
     def partial_update(self, request, *args, **kwargs):
         """Handle product partial update and add a 
         image to a service by its id if its the case"""
@@ -112,6 +126,7 @@ class ServiceDetailView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(auto_schema = None)
     def get(self, request, pk, format = None):
         """Return the service by the id"""
         service = self.get_object(pk)

@@ -40,6 +40,7 @@ class UserModelSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'full_name', 'is_verified', 'is_staff', 'company', )
 
+
 class UserNestedModelSerializer(serializers.ModelSerializer):
 
     company = CompanyModelSerializer()
@@ -48,11 +49,20 @@ class UserNestedModelSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'is_verified', 'company')
 
+
+class DocumentationUserSerializer(serializers.Serializer):
+    """Serializer created uniquely for display correctly the request data of the Login endpoint"""
+
+    access_token = serializers.CharField()
+    user = UserModelSerializer()
+
+
 class UserSignupSerializer(serializers.Serializer):
     """User sign up serializer.
 
     Handle sign up data validation and user/profile creation.
     """
+
     email = serializers.EmailField(
         validators = [ 
             UniqueValidator( queryset = User.objects.all(), message = "There is alredy a user with this email" )
@@ -75,7 +85,7 @@ class UserSignupSerializer(serializers.Serializer):
         passw_conf = data['password_confirmation']
 
         if passw != passw_conf:
-            raise serializers.ValidationError("Las contraseñas no concuerdan")
+            raise serializers.ValidationError("Las contraseñas no coinciden")
         
         password_validation.validate_password( passw )
         
@@ -153,10 +163,13 @@ class UserLoginSerializer(serializers.Serializer):
         token, created = Token.objects.get_or_create( user = self.context['user'] )
         return self.context['user'], token.key
     
+
 class AccountVerificationSerializer(serializers.Serializer):
     """Account verification serializer"""
 
-    token = serializers.CharField()
+    token = serializers.CharField(
+        help_text = "Verification token that is provided by the `User Verification Token` endpoint"
+    )
 
     def validate_token(self, data):
         """Verify token is valid."""

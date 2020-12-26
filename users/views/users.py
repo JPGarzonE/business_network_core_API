@@ -1,10 +1,14 @@
 """User views."""
 
+# Django
+from django.utils.decorators import method_decorator
+
 # Django REST Framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 
 # Documentation
@@ -23,6 +27,7 @@ from users.models import User
 
 # Serializer
 from users.serializers import (
+    DocumentationUserSerializer,
     UserModelSerializer,
     UserNestedModelSerializer,
     UserSignupSerializer, 
@@ -30,8 +35,21 @@ from users.serializers import (
     AccountVerificationSerializer
 )
 
-# Create your views here.
 
+@method_decorator( name = 'list', decorator = swagger_auto_schema(
+    operation_id = "List all users", tags = ["Users"],
+    operation_description = "Endpoint to list all the users registered in the platform",
+    manual_parameters = [
+        openapi.Parameter(name = "email", in_ = openapi.IN_QUERY, type = "String",
+            description = "Param for get a user by its email. (This field evaluates an exact match)")
+    ],
+    responses = { 404: openapi.Response("Not Found") }, security = []
+))
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema(
+    operation_id = "Retrieve a user", tags = ["Users"], security = [],
+    operation_description = "Endpoint to retrieve a user by its username.",
+    responses = { 200: UserModelSerializer, 404: openapi.Response("Not Found") }
+))
 class UserViewSet(mixins.ListModelMixin,
                 mixins.RetrieveModelMixin,
                 viewsets.GenericViewSet):
@@ -69,15 +87,14 @@ class UserViewSet(mixins.ListModelMixin,
         )
 
 
-    @swagger_auto_schema( operation_id = "Signup", tags = ["Authentication"], request_body = UserSignupSerializer,
-        responses = { 201: openapi.Response( "User created", UserModelSerializer, examples = {
-                "application/json" : [ {"user": "UserObject", "access_token": "string"} ]
-            }), 
+    @swagger_auto_schema( operation_id = "Signup", tags = ["Authorization"], request_body = UserSignupSerializer,
+        responses = { 201: openapi.Response( "User created", DocumentationUserSerializer), 
             400: openapi.Response("Bad request", examples = {"application/json": [
                 {"password_confirmation": ["This field is required"], "company": {"nit": ["company with this nit alredy exist"]},
                 "non_field_errors": ["las contraseñas no concuerdan"] }
             ]})
-        }, security = [{ "Anonymous": [] }])
+        }, security = [{ "Anonymous": [] }]
+    )
     @action(detail = False, methods = ['post'])
     def signup(self, request):
         """Endpoint for signup a user in the system.
@@ -94,17 +111,18 @@ class UserViewSet(mixins.ListModelMixin,
         return Response( data, status = status.HTTP_201_CREATED )
 
 
-    @swagger_auto_schema( operation_id = "Login", tags = ["Authentication"], request_body = UserLoginSerializer,
-        responses = { 201: openapi.Response( "User authenticated", UserModelSerializer, examples = {
-                "application/json" : [ {"user": "UserObject", "access_token": "string"} ]
-            }), 
+    @swagger_auto_schema( tags = ["Authorization"], request_body = UserLoginSerializer,
+        responses = { 201: openapi.Response( "User authenticated", DocumentationUserSerializer),
             400: openapi.Response("Bad request", examples = {"application/json": [
                 {"non_field_errors": ["Invalid credentials"] }
-            ]})
-        }, security = [{ "Anonymous": [] }])
+            ]} )}, security = []
+    )
     @action(detail=False, methods=['post'])
     def login(self, request):
-        """Endpoint for authenticate a user in the system. Return an access_token for grant future access."""
+        """Login\n
+            Endpoint for authenticate a user in the system. Return an access_token for grant future access.\n
+        """
+
         serializer = UserLoginSerializer( data = request.data )
         serializer.is_valid( raise_exception = True )
         user, token = serializer.save()
@@ -115,18 +133,6 @@ class UserViewSet(mixins.ListModelMixin,
         }
         return Response( data, status = status.HTTP_201_CREATED )
 
-    def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
-        response = super(UserViewSet, self).retrieve(request, *args, **kwargs)
-
-        data = {
-            'user': response.data,
-            'is_owner': request.user.username == response.data.get("username")
-        }
-
-        response.data = data
-        return response
-
 
 class UserIdentityAPIView(APIView):
     """User identity API view that identify and return a 
@@ -134,8 +140,15 @@ class UserIdentityAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema( operation_id = "Me", tags = ["Me"], security = [{ "api-key": []}],
+        operation_description = """
+            Special endpoint that takes the access token of the request, identify the user
+            of that access token and return the respective user.""",
+        responses = { 200: UserNestedModelSerializer, 404: openapi.Response("Not Found")}
+    )
     def get(self, request, format = None, **kwargs):
         """Handle HTTP get for retrieving a user according its access token"""
+        
         serializer = UserNestedModelSerializer( request.user )
         data = serializer.data
 
@@ -147,12 +160,23 @@ class AccountVerificationAPIView(APIView):
 
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema( tags = ["User Verifications"], request_body = AccountVerificationSerializer,
+        responses = { 200: openapi.Response("OK", examples = {"application/json": 
+                {'detail': 'Felicitaciones, ¡Ahora ve y haz crecer tu marca!'} }), 
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"detail": "Verification link has expired"} }),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            404: openapi.Response("Not Found") }, security = [{ "api-key": [] }]
+    )
     def post(self, request, *args, **kwargs):
-        """Handle HTTP POST request"""
+        """Verify account\n
+            Endpoint to verify the account of a user. This is the last step of the basic verification process.\n
+            In the body it has to be passed the verification token and if it is correct, the user account is verified.
+        """
 
         serializer = AccountVerificationSerializer(data = request.data)
         serializer.is_valid(raise_exception = True)
         serializer.save()
-        data = {'message': 'Felicitaciones, ¡Ahora ve y haz crecer tu marca!'}
+        data = {'detail': 'Felicitaciones, ¡Ahora ve y haz crecer tu marca!'}
 
         return Response(data, status = status.HTTP_200_OK)

@@ -27,27 +27,31 @@ from companies.serializers import CompanySaleLocationModelSerializer, HandleComp
 # Utils
 from distutils.util import strtobool
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List company sale locations", tags = ["Locations"],
-    operation_description = "Endpoint to list all the locations where a company sales." ,
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+@method_decorator(name='list', decorator = swagger_auto_schema( 
+    operation_id = "List supplier sale locations", tags = ["Supplier Locations"],
+    operation_description = "Endpoint to list all the locations where a supplier sales." ,
+    responses = { 404: openapi.Response("Not Found") }, security = []
 ))
-@method_decorator(name='partial_update', decorator = swagger_auto_schema( operation_id = "Partial update sale location", 
-    tags = ["Locations"], request_body = CompanySaleLocationModelSerializer,
-    operation_description = "Endpoint to partial update a sale location.",
-    responses = { 404: openapi.Response("Not Found"),
+@method_decorator(name='destroy', decorator = swagger_auto_schema(
+    operation_id = "Delete a sale location", tags = ["Supplier Locations"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to delete a sale location of a supplier by company username and location id.",
+    responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
         401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
-        400: openapi.Response("Bad request", examples = {"application/json":
-            {"country": ["This field may not be null"]} 
-        })
-    }, security = [{ "api_key": [] }]
+    }
 ))
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
+    operation_id = "Retrieve sale location", tags = ["Supplier Locations"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to retrieve a location where a supplier sales by its id.",
+    responses = { 200: CompanySaleLocationModelSerializer, 404: openapi.Response("Not Found")}
+))
+@method_decorator(name = 'update', decorator = swagger_auto_schema(auto_schema = None))
 class CompanySaleLocationViewSet(mixins.ListModelMixin,
-                      mixins.CreateModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
-    """Company Sael Location view set"""
+                                mixins.CreateModelMixin,
+                                mixins.RetrieveModelMixin,
+                                mixins.UpdateModelMixin,
+                                mixins.DestroyModelMixin,
+                                viewsets.GenericViewSet):
+    """Company Sale Location view set"""
 
     serializer_class = CompanySaleLocationModelSerializer
     company = None
@@ -98,13 +102,17 @@ class CompanySaleLocationViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
-    @swagger_auto_schema( operation_id = "Create a sale location", tags = ["Locations"], request_body = HandleCompanySaleLocationSerializer,
+
+    @swagger_auto_schema( operation_id = "Create sale location", tags = ["Supplier Locations"],
+        request_body = HandleCompanySaleLocationSerializer, security = [{ "api-key": [] }],
         responses = { 404: openapi.Response("Not Found"),
-            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Authentication credentials were not provided"} }),
+            401: openapi.Response("Unauthorized", examples = {"application/json": 
+                {"detail": "Authentication credentials were not provided"} 
+            }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"country": ["This field may not be null"]} 
             })
-        }, security = [{ "api_key": [] }])
+        })
     def create(self, request, *args, **kwargs):
         """Endpoint to create a location where the company sales."""
         try:
@@ -121,4 +129,37 @@ class CompanySaleLocationViewSet(mixins.ListModelMixin,
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
         
+        return Response(data, status = data_status)
+
+    
+    @swagger_auto_schema( operation_id = "Partial update sale location", tags = ["Supplier Locations"],
+        responses = { 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"country": ["This field may not be null"]} 
+            })
+        }, request_body = CompanySaleLocationModelSerializer, security = [{ "api-key": [] }]
+    )
+    def partial_update(self, request, *args, **kwargs):
+        """Endpoint to update partially a location where a supplier sales. 
+            It is partial, so its not needed pass all the body values
+        """
+
+        try:
+            instance = self.get_object()
+            serializer = HandleCompanySaleLocationSerializer(
+                instance = instance,
+                data=  request.data,
+                context = {'company': self.company},
+                partial = True
+            )
+            serializer.is_valid(raise_exception=True)
+            location = serializer.save()
+
+            data = self.get_serializer(location).data
+            data_status = status.HTTP_200_OK
+        except Exception as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
+
         return Response(data, status = data_status)

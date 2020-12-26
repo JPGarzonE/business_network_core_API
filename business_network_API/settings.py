@@ -235,19 +235,18 @@ EMAIL_USE_TLS = True
 
 DEFAULT_FROM_EMAIL = 'api.conecty@gmail.com'
 
-# Documentatio Settings
+# Documentation Settings
 SWAGGER_SETTINGS = {
    'SECURITY_DEFINITIONS': {
-       'Anonymous': {
-           'type': 'basic',
-           'description': 'When there are no token credentials'
-       },
-
-      'api_key': {
+        'api-key': {
             'type': 'apiKey',
             'name': 'Authorization',
             'in': 'header',
-            'description': 'Needs to send a berar token in the Authorization Headers. (Is provided by the login or signup endpoints)'
-      }
+            'description': """
+                To authenticate a request, the `Authorization` header must be provided along with the user auth token (A bearer token). \n
+                The respective value of the Authorization header must have the format: `Token <auth_token>`.\n
+                This auth token is provided in the below **Authorization** section by the `login` or `signup` endpoints.
+            """
+        }
    }
 }

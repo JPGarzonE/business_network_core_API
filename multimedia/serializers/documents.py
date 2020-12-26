@@ -27,6 +27,7 @@ class DocumentModelSerializer(serializers.ModelSerializer):
 
         fields = (
             'id',
+            'user',
             'name',
             'path',
             'purpose',
@@ -64,6 +65,7 @@ class CreateDocumentSerializer(serializers.Serializer):
     requires_context = True
 
     file = serializers.FileField(required = True, allow_empty_file = False)
+
     purpose = serializers.CharField(
         help_text = "Describes the need that the document meets. Ej: Company comercial certificate",
         max_length = 50,

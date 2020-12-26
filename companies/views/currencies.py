@@ -27,7 +27,7 @@ from companies.models import Currency
 
 @method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List currencies", tags = ["Currencies"],
     operation_description = "Endpoint to list all the currencies available in the platform",
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+    responses = { 404: openapi.Response("Not Found") }, security = []
 ))
 @method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class CurrencyViewSet(mixins.ListModelMixin,
@@ -61,9 +61,13 @@ class CurrencyViewSet(mixins.ListModelMixin,
 
         return currency
 
-    @swagger_auto_schema(auto_schema=None)
+    @swagger_auto_schema( tags = ["Currencies"], responses = { 404: openapi.Response("Not Found") }, 
+        security = [{ "api-key": ["Is Admin needed"] }]
+    )
     def create(self, request, *args, **kwargs):
-        """Create a currency"""
+        """Create a currency\n
+            Endpoint to create a currency in the platform
+        """
         try:
             currency_serializer = CurrencyModelSerializer(
                 data = request.data
@@ -79,9 +83,14 @@ class CurrencyViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
-    @swagger_auto_schema(auto_schema=None)
+    @swagger_auto_schema( tags = ["Currencies"], responses = { 404: openapi.Response("Not Found") }, 
+        security = [{ "api-key": ["Is Admin needed"] }]
+    )
     def partial_update(self, request, *args, **kwargs):
-        """Partial update a currency"""
+        """Partial update a currency\n
+            Endpoint to partial update a currency in the platform
+        """
+
         try:
             instance = self.get_object()
             currency_serializer = CurrencyModelSerializer(

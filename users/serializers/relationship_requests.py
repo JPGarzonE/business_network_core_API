@@ -49,7 +49,11 @@ class CreateRelationshipRequestSerializer(serializers.Serializer):
 
     requires_context = True
 
-    message = serializers.CharField(max_length=64, required = False)
+    message = serializers.CharField(
+        max_length=64, 
+        required = False,
+        help_text = "message that could be sent to the addressed user with the request."
+    )
 
     @transaction.atomic
     def create(self, data):

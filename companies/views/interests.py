@@ -1,10 +1,17 @@
 """Company Interest views."""
 
+# Django
+from django.utils.decorators import method_decorator
+
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
+
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Models
 from companies.models import Company, Interest, VisibilityState
@@ -16,6 +23,25 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 # Serializers
 from companies.serializers import InterestModelSerializer, CreateCompanyInterestSerializer
 
+
+@method_decorator(name = 'list', decorator = swagger_auto_schema( operation_id = "List company interests", tags = ["Company Interests"],
+    operation_description = "Endpoint to list all the interests that has a company",
+    responses = { 404: openapi.Response("Not Found") }, security = [{"api-key": []}]
+))
+@method_decorator(name = 'update', decorator = swagger_auto_schema(auto_schema = None) )
+@method_decorator(name = 'partial_update', decorator = swagger_auto_schema( 
+    operation_id = "Partial update a company interest", tags = ["Company Interests"], 
+    operation_description = "Endpoint to partial update a company interest by company username and interest id.",
+    responses = { 404: openapi.Response("Not Found") }, security = [{ "api-key": [] }]
+))
+@method_decorator(name = 'destroy', decorator = swagger_auto_schema(
+    operation_id = "Delete a company interest", tags = ["Company Interests"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to delete a company interest by company username and interest id",
+    responses = { 
+        204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
+        401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+    }
+))
 class InterestViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.RetrieveModelMixin,
@@ -72,8 +98,19 @@ class InterestViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
+
+    @swagger_auto_schema( tags = ["Company Interests"], request_body = CreateCompanyInterestSerializer,
+        responses = { 
+            200: InterestModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = { "application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json": {"name": ["This field is required"]} })
+        }, security = [{"api-key": []}]
+    )
     def create(self, request, *args, **kwargs):
-        """Handle Interest creation."""
+        """Create a company interest\n
+            Endpoint to create an interest for a company by the username given.
+        """
+
         interest_serializer = CreateCompanyInterestSerializer(
             data = request.data,
             context = {'company': self.company}
@@ -86,8 +123,15 @@ class InterestViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
+
+    @swagger_auto_schema( tags = ["Company Interests"], security = [{"api-key": []}],
+        responses = { 200: InterestModelSerializer, 404: openapi.Response("Not Found") }
+    )
     def retrieve(self, request, *args, **kwargs):
-        """Add extra data to the response."""
+        """Retrieve a company interest\n
+            Endpoint to retrieve a company interest by company username and interest id.
+        """
+
         response = super(InterestViewSet, self).retrieve(request, *args, **kwargs)
 
         data = {

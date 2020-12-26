@@ -32,11 +32,12 @@ from companies.serializers import ProductDetailModelSerializer, ProductOverviewM
 from companies import signals
 
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
-        operation_description = "Endpoint to delete a product by its id",
+        operation_description = "Endpoint to delete a supplier product by its id",
         responses = { 204: "No Content", 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
-        }, security = [{ "api_key": [] }]
+        }, security = [{ "api-key": [] }]
 ))
+@method_decorator( name = 'update', decorator = swagger_auto_schema(auto_schema = None))
 class ProductViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.UpdateModelMixin,
@@ -87,9 +88,9 @@ class ProductViewSet(mixins.ListModelMixin,
 
         return product
 
-    @swagger_auto_schema( operation_id = "List products", tags = ["Products"],
-        operation_description = "Endpoint to list all the products of a company",
-        responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+    @swagger_auto_schema( operation_id = "List supplier products", tags = ["Products"],
+        operation_description = "Endpoint to list all the products offered by a supplier",
+        responses = { 404: openapi.Response("Not Found") }, security = []
     )
     def list(self, request, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -124,10 +125,10 @@ class ProductViewSet(mixins.ListModelMixin,
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"minimum_purchase": ["This field may not be null"]} 
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def create(self, request, *args, **kwargs):
-        """Create product\n
-            Endpoint to create a product.\n 
+        """Create a product\n
+            Endpoint to create a product owned by a supplier.\n 
             To append complementary data (like certificates or image) to a product you have 
             to append a list with the ids ([189, 243, 2]) of the objects previosuly uploaded,
             this lists are appended in the fields 'certificates' and 'images' respectively. (Request Body below)
@@ -156,10 +157,10 @@ class ProductViewSet(mixins.ListModelMixin,
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"name": ["This field may not be null"]}
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def partial_update(self, request, *args, **kwargs):
         """Partial update a product\n
-            Endpoint to update partially a product.\n 
+            Endpoint to update partially a product owned by a supplier.\n 
             When some object id is added in certificates or media, those objects are
             going to be added to the existing ones, not overwritten. To delete a certificate or 
             a media do it through the ProductCertificate or ProductImage delete endpoints
@@ -194,9 +195,10 @@ class ProductDetailView(APIView):
     permission_classes = [AllowAny]
 
     @swagger_auto_schema( operation_id = "Retrieve a product", tags = ["Products"],
-        responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
+        responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found")}, security = [])
     def get(self, request, pk, format = None):
         """Endpoint to retrieve the product by the id"""
+
         try:
             product = self.get_object(pk)
             serializer = ProductDetailModelSerializer(product)
@@ -237,7 +239,7 @@ class DeleteProductImageView(APIView):
             404: openapi.Response("Not Found", examples = {"application/json":
                {"detail": "Product image not found with the id provided"}
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def delete(self, request, product_id, image_id, format=None):
         """Delete a product image \n
         Endpoint to delete an image from a product. (You have to be the owner of the product)\n

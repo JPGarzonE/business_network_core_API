@@ -11,7 +11,8 @@ from users.views import (
     UserIdentityAPIView,
     UserViewSet, 
     UserVerificationAPIView,
-    UserVerificationTokenAPIView
+    UserVerificationTokenAPIView,
+    RestorePasswordAPIView
 )
 
 router = routers.DefaultRouter()
@@ -38,11 +39,12 @@ router.register(
 )
 
 urlpatterns = [
-    path('users/verify/', AccountVerificationAPIView.as_view(), name = 'verify_account'),
-    path('users/<username>/verification/token/', UserVerificationTokenAPIView.as_view(), name="user_verification"),
-
     path('me/', UserIdentityAPIView.as_view(), name = 'user_me'),
     path('me/verification/', UserVerificationAPIView.as_view(), name = 'user_verification_me'),
+    path('me/restores/password/', RestorePasswordAPIView.as_view(), name = 'Restore password'),
+
+    path('users/verify/', AccountVerificationAPIView.as_view(), name = 'verify_account'),
+    path('users/<username>/verification/token/', UserVerificationTokenAPIView.as_view(), name="user_verification"),
 
     path('', include(router.urls)),
 

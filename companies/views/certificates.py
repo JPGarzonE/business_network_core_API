@@ -30,20 +30,25 @@ from companies.serializers import (
     UpdateCertificateSerializer
 )
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List company certificates", tags = ["Certificates"],
+
+@method_decorator(name='list', decorator = swagger_auto_schema( 
+    operation_id = "List company certificates", tags = ["Supplier Certificates"],
     operation_description = "Endpoint to list all the certificates of a company user",
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+    responses = { 404: openapi.Response("Not Found") }, security = []
 ))
-@method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a certificate", tags = ["Certificates"],
-        operation_description = "Endpoint to delete a certificate by its id",
-        responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
-            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
-        }, security = [{ "api_key": [] }]
+@method_decorator( name = 'destroy', decorator = swagger_auto_schema( 
+    operation_id = "Delete a certificate", tags = ["Supplier Certificates"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to delete a certificate by its id",
+    responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
+        401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+    }
 ))
-@method_decorator( name = 'retrieve', decorator = swagger_auto_schema( operation_id = "Retrieve a company certificate", tags = ["Certificates"],
-        operation_description = "Endpoint to retrieve a certificate owned by a company according its id.",
-        responses = { 200: CompanyCertificateModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "api_key": [] }]
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
+    operation_id = "Retrieve a company certificate", tags = ["Supplier Certificates"], security = [],
+    operation_description = "Endpoint to retrieve a certificate owned by a company according its id.",
+    responses = { 200: CompanyCertificateModelSerializer, 404: openapi.Response("Not Found")}
 ))
+@method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class CompanyCertificateViewSet(mixins.ListModelMixin,
                                 mixins.RetrieveModelMixin,
                                 mixins.CreateModelMixin,
@@ -101,13 +106,14 @@ class CompanyCertificateViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
-    @swagger_auto_schema( tags = ["Certificates"], request_body = CreateCompanyCertificateSerializer,
+    @swagger_auto_schema( tags = ["Supplier Certificates"], request_body = CreateCompanyCertificateSerializer,
         responses = { 200: CompanyCertificateModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"detail": "The body data must have at least a name for the certificate creation or a certificate_id for associating to a existing certificate."} 
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }]
+    )
     def create(self, request, *args, **kwargs):
         """Create company certificate\n
             Endpoint to create a company certificate.\n 
@@ -131,13 +137,13 @@ class CompanyCertificateViewSet(mixins.ListModelMixin,
 
         return Response(data, status = data_status)
 
-    @swagger_auto_schema( operation_id = "Partial update company certificate", tags = ["Certificates"], request_body = UpdateCertificateSerializer,
+    @swagger_auto_schema( operation_id = "Partial update company certificate", tags = ["Supplier Certificates"], request_body = UpdateCertificateSerializer,
         responses = { 200: CompanyCertificateModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"name": ["This field may not be null"]} 
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def partial_update(self, request, *args, **kwargs):
         """Enpoint to update partially a company certificate"""
         try:
@@ -166,8 +172,8 @@ class CertificateDetailView(APIView):
 
     permission_classes = [AllowAny]
 
-    @swagger_auto_schema( tags = ["Certificates"],
-        responses = { 200: CertificateModelSerializer, 404: openapi.Response("Not Found")}, security = [{ "Anonymous": [] }])
+    @swagger_auto_schema( tags = ["Supplier Certificates"],
+        responses = { 200: CertificateModelSerializer, 404: openapi.Response("Not Found")}, security = [])
     def get(self, request, pk, format = None):
         """Retrieve certificate detail\n
         Endpoint to retrieve certificate by its id.\n
@@ -202,7 +208,7 @@ class DeleteProductCertificateView(APIView):
             404: openapi.Response("Not Found", examples = {"application/json":
                {"detail": "Product image not found with the id provided"}
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def delete(self, request, product_id, certificate_id, format=None):
         """Delete a product certificate \n
         Endpoint to delete a certificate from a product. (You have to be the owner of the product)\n"""

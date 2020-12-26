@@ -9,6 +9,10 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 # Models
 from companies.models import Company, VisibilityState
 
@@ -16,7 +20,7 @@ from companies.models import Company, VisibilityState
 from rest_framework.permissions import AllowAny
 
 # Serializers
-from companies.serializers import SupplierProfileSerializer
+from companies.serializers import SupplierProfileSerializer, DocumentationSupplierProfileSerializer
 
 
 class CompanyProfileView(APIView):
@@ -24,8 +28,12 @@ class CompanyProfileView(APIView):
 
     permission_classes = [AllowAny]
 
+    @swagger_auto_schema( operation_id = "Retrieve Supplier Profile", tags = ["Profiles"],
+        responses = { 200: DocumentationSupplierProfileSerializer, 404: openapi.Response("Not Found")}, security = []
+    )
     def get(self, request, username, format = None):
-        """Return the profile of the company by param."""
+        """Return the profile of a supplier with the username given by param."""
+
         try:
             company = self.get_object(username)
             profile_company = {

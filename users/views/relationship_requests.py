@@ -1,14 +1,19 @@
 """Relationship request view"""
 
+# Django
+from django.utils.decorators import method_decorator
+from django.db import transaction
+from django.db.models import Q
+ 
 # Django REST framework
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
-# Django
-from django.db import transaction
-from django.db.models import Q
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Models
 from users.models import User, Relationship, RelationshipRequest
@@ -29,6 +34,24 @@ from users.serializers import (
 from django.db.utils import IntegrityError
 
 
+@method_decorator( name = 'list', decorator = swagger_auto_schema(
+    operation_id = "List the relationship requests sent", tags = ["Relationship Requests"],
+    operation_description = "Endpoint to list all the relationship requests that have been sent (by the requester user of this request).",
+    responses = { 404: openapi.Response("Not Found") }, security = [{ "api-key": [] }]
+))
+@method_decorator( name = 'destroy', decorator = swagger_auto_schema(
+    operation_id = "Delete a relationship request sent", tags = ["Relationship Requests"],
+    operation_description = "Endpoint to delete a relationship request that have been sent (by the requester user of this request).",
+    responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
+        401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+    }, 
+    security = [{ "api-key": ["Requester user has to be the relation requester"] }]
+))
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema(
+    operation_id = "Retrieve a relationship request sent", tags = ["Relationship Requests"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to retrieve a relationship request that have been sent (by the requester user of this request).",
+    responses = { 200: RelationshipRequestModelSerializer, 404: openapi.Response("Not Found")}
+))
 class SentRelationshipRequestViewSet(mixins.ListModelMixin,
                                 mixins.DestroyModelMixin,
                                 mixins.RetrieveModelMixin,
@@ -65,6 +88,17 @@ class SentRelationshipRequestViewSet(mixins.ListModelMixin,
         return relationship_request
 
 
+@method_decorator( name = 'list', decorator = swagger_auto_schema(
+    operation_id = "List the relationship requests recieved", tags = ["Relationship Requests"],
+    operation_description = "Endpoint to list all the relationship requests that the request user has recieved.",
+    responses = { 404: openapi.Response("Not Found") }, security = [{ "api-key": [] }]
+))
+@method_decorator( name = 'retrieve', decorator = swagger_auto_schema(
+    operation_id = "Retrieve a relationship request recieved", tags = ["Relationship Requests"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to retrieve a relationship request that the request user has recieved.",
+    responses = { 200: RelationshipRequestModelSerializer, 404: openapi.Response("Not Found")}
+))
+@method_decorator( name = 'update', decorator = swagger_auto_schema(auto_schema = None) )
 class RecievedRelationshipRequestViewSet(mixins.ListModelMixin,
                                     mixins.UpdateModelMixin,
                                     mixins.RetrieveModelMixin,
@@ -117,9 +151,35 @@ class RecievedRelationshipRequestViewSet(mixins.ListModelMixin,
 
         return relationship_request
 
+
+    @swagger_auto_schema( tags = ["Relationship Requests"], request_body = serializers.Serializer(),
+        security = [{ "api-key": ["Relation addressed needed"] }],
+        manual_parameters = [
+            openapi.Parameter(name = "action", in_ = openapi.IN_QUERY, type = "String", required = True,
+                enum = ["accept", "deny"],
+                description = """
+                    Action that is going to be executed over the relationship request.\n
+                    This param has only the two possible values in enum.\n""")
+        ],
+        responses = { 200: RelationshipRequestModelSerializer, 201: RelationshipModelSerializer,
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"detail": "the action param have to be accept or deny"} }), 
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            404: openapi.Response("Not Found"),
+            409: openapi.Response("Conflict", examples = {"application/json": 
+                {"detail": "Error. This relationship alredy exist."} })
+        })
     @transaction.atomic
     def partial_update(self, request, *args, **kwargs):
-        """Accept or deny relationship request"""
+        """Accept or deny a Relationship Request\n
+            Endpoint to accept or deny a relationship request. 
+            This actions is executed depending the value on the accept query param.\n
+            - The response return `200` if the relationship request was denied succesfully.\n
+            - The response return `201` if the relationship request was accepted succesfully. 
+            In consecuence a relationship is created.\n
+            *This endpoint can only be used by the relation addressed user.*
+        """
+
         action = request.query_params.get('action')
 
         if action:
@@ -134,12 +194,14 @@ class RecievedRelationshipRequestViewSet(mixins.ListModelMixin,
                 return self.deny(relationship_request = instance)
             else:
                 return Response( 
-                    {"message": "the action param have to be accept or deny"}, 
+                    {"detail": "the action param have to be accept or deny"}, 
                     status = status.HTTP_400_BAD_REQUEST
                 )
 
         else:
-            return Response( {"message": "the update need the <<action>> query param"}, status = status.HTTP_400_BAD_REQUEST)
+            return Response( {"detail": "the update need the <<action>> query param"}, 
+                status = status.HTTP_400_BAD_REQUEST)
+
 
     @transaction.atomic
     def accept(self, relationship_type, relationship_request):
@@ -167,6 +229,7 @@ class RecievedRelationshipRequestViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
+
     @transaction.atomic
     def deny(self, relationship_request):
         """Deny the relationship_request"""
@@ -183,14 +246,10 @@ class RecievedRelationshipRequestViewSet(mixins.ListModelMixin,
         return Response(data, status.HTTP_200_OK)
 
     
-class RelationshipRequestViewSet(mixins.ListModelMixin,
-                                mixins.RetrieveModelMixin,
-                                mixins.CreateModelMixin,
+
+class RelationshipRequestViewSet(mixins.CreateModelMixin,
                                 viewsets.GenericViewSet):
-    """
-    Relationship request viewset to send a relationship request 
-    to a target_user or to administrate relationship request for 
-    an external user (user that's not the target)"""
+    """Relationship request viewset to send a relationship request to a target_user"""
 
     serializer_class = RelationshipRequestModelSerializer
     target_user = None
@@ -211,26 +270,19 @@ class RelationshipRequestViewSet(mixins.ListModelMixin,
 
         return [permission() for permission in permissions]
 
-    def get_queryset(self):
-        """Return user relationship requests the he recieved"""
-        relationship_requests = RelationshipRequest.objects.filter(
-            addressed = self.target_user
-        )
 
-        return relationship_requests
-
-    def get_object(self):
-        """Return the recieved relationship request by the id"""
-        relationship_request = get_object_or_404(
-            RelationshipRequest,
-            id = self.kwargs['pk'],
-            addressed = self.target_user
-        )
-
-        return relationship_request
-
+    @swagger_auto_schema( tags = ["Relationship Requests"], request_body = CreateRelationshipRequestSerializer,
+        responses = { 200: RelationshipRequestModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            409: openapi.Response("Bad request", examples = {"application/json":
+                {"detail": "The relationship alredy have a pending request."} })
+        }, security = [{ "api-key": [] }]
+    )
     def create(self, request, *args, **kwargs):
-        """Handle relationship request creation."""
+        """Send a relationship request\n
+            Endpoint to send (create) a relationship request to an addressed user (`target user`).
+        """
+
         relationship_request_validation = RelationshipRequest.objects.filter(
             ( Q(requester = request.user) & Q(addressed = self.target_user) ) | ( Q(requester = self.target_user) & Q(addressed = request.user) )
         )

@@ -27,12 +27,15 @@ from companies.serializers import CompanyLocationModelSerializer, HandleCompanyL
 # Utils
 from distutils.util import strtobool
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List company operative locations", tags = ["Locations"],
-    operation_description = "Endpoint to list all the locations where a company operates." ,
-    manual_parameters = [ openapi.Parameter(name = "principal", default = False, in_ = openapi.IN_QUERY, type = "Boolean",
-    description = "Filter the locations depending if they are principal or secondary locations. If its true, return the main location of the company") ], 
-    responses = { 404: openapi.Response("Not Found") }, security = [{ "Anonymous": [] }]
+
+@method_decorator(name = 'destroy', decorator = swagger_auto_schema(
+    operation_id = "Delete an operative location", tags = ["Supplier Locations"], security = [{ "api-key": [] }],
+    operation_description = "Endpoint to delete an operative location of a supplier by company username and location id.",
+    responses = { 204: openapi.Response("No Content"), 404: openapi.Response("Not Found"),
+        401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+    }
 ))
+@method_decorator(name = 'update', decorator = swagger_auto_schema(auto_schema = None))
 class CompanyLocationViewSet(mixins.ListModelMixin,
                       mixins.CreateModelMixin,
                       mixins.RetrieveModelMixin,
@@ -91,8 +94,18 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
             )
 
 
+    @swagger_auto_schema( operation_id = "List supplier operative locations", tags = ["Supplier Locations"],
+        operation_description = "Endpoint to list all the locations where a supplier operates." ,
+        manual_parameters = [
+            openapi.Parameter(name = "principal", default = False, in_ = openapi.IN_QUERY, type = "Boolean",
+                description = """Filter the locations depending if they are principal or secondary locations. 
+                If its true, return the main location of the company""")
+        ],
+        responses = { 404: openapi.Response("Not Found") }, security = []
+    )
     def list(self, request, *args, **kwargs):
         """Valid param principal before super list eventually executes get_queryset method"""
+
         principal = self.request.query_params.get('principal')
 
         if principal:
@@ -120,15 +133,19 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
         instance.visibility = VisibilityState.DELETED.value
         instance.save()
 
-    @swagger_auto_schema( operation_id = "Partial update location", tags = ["Locations"], request_body = CompanyLocationModelSerializer,
+
+    @swagger_auto_schema( operation_id = "Partial update operative location", tags = ["Supplier Locations"], request_body = CompanyLocationModelSerializer,
         responses = { 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json":
                 {"country": ["This field may not be null"]} 
             })
-        }, security = [{ "api_key": [] }])
+        }, security = [{ "api-key": [] }])
     def partial_update(self, request, *args, **kwargs):
-        """Endpoint to update partially a location object. It is partial, so its not needed pass all the body values"""
+        """Endpoint to update partially a location where a supplier operates. 
+            It is partial, so its not needed pass all the body values
+        """
+
         try:
             instance = self.get_object()
             serializer = HandleCompanyLocationSerializer(
@@ -148,15 +165,18 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
 
         return Response(data, status = data_status)
 
-    @swagger_auto_schema( operation_id = "Create a location", tags = ["Locations"], request_body = HandleCompanyLocationSerializer,
+
+    @swagger_auto_schema( operation_id = "Create operative location", tags = ["Supplier Locations"], request_body = HandleCompanyLocationSerializer,
         responses = { 404: openapi.Response("Not Found"),
-            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Authentication credentials were not provided"} }),
+            401: openapi.Response("Unauthorized", examples = {"application/json": 
+                {"detail": "Authentication credentials were not provided"} }),
             400: openapi.Response("Bad request", examples = {"application/json":
-                {"country": ["This field may not be null"]} 
-            })
-        }, security = [{ "api_key": [] }])
+                {"country": ["This field may not be null"]} })
+        }, security = [{ "api-key": [] }]
+    )
     def create(self, request, *args, **kwargs):
-        """Endpoint to create a location of a company."""
+        """Endpoint to create a location where a supplier operates."""
+
         try:
             location_serializer = HandleCompanyLocationSerializer(
                 data = request.data,
@@ -173,10 +193,11 @@ class CompanyLocationViewSet(mixins.ListModelMixin,
         
         return Response(data, status = data_status)
 
-    @swagger_auto_schema( operation_id = "Retrieve a location", tags = ["Locations"],
-        responses = { 404: openapi.Response("Not Found")}, security = [{ "api_key": [] }])
+    @swagger_auto_schema( operation_id = "Retrieve operative location", tags = ["Supplier Locations"],
+        responses = { 404: openapi.Response("Not Found")}, security = [{ "api-key": [] }])
     def retrieve(self, request, *args, **kwargs):
-        """Endpoint to retrieve a location by its id"""
+        """Endpoint to retrieve a location where a supplier operates by its id"""
+
         response = super(CompanyLocationViewSet, self).retrieve(request, *args, **kwargs)
 
         data = response.data

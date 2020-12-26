@@ -1,5 +1,8 @@
 # views/companies.py
 
+# Django
+from django.utils.decorators import method_decorator
+
 # Django-rest framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.generics import get_object_or_404
@@ -7,6 +10,7 @@ from rest_framework.response import Response
 
 # Documentation
 from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Serializers
 from companies.serializers import (
@@ -23,6 +27,19 @@ from companies.permissions import IsCompanyAccountOwner, IsDataOwner
 
 # Create your views here.
 
+@method_decorator(name = 'list', decorator = swagger_auto_schema( operation_id = "List companies", tags = ["Companies"],
+    operation_description = "Endpoint to list all the companies registered in the platform",
+    manual_parameters = [
+        openapi.Parameter(name = "name", in_ = openapi.IN_QUERY, type = "String"),
+        openapi.Parameter(name = "nit", in_ = openapi.IN_QUERY, type = "String")
+    ],
+    responses = { 404: openapi.Response("Not Found") }, security = []
+))
+@method_decorator(name = 'retrieve', decorator = swagger_auto_schema( operation_id = "Retrieve a company", tags = ["Companies"],
+    operation_description = "Endpoint to retrieve a company registered in the platform",
+    responses = { 200: CompanyModelSerializer, 404: openapi.Response("Not Found")}, security = []
+))
+@method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class CompanyViewSet(mixins.RetrieveModelMixin,
                     mixins.ListModelMixin,
                     mixins.UpdateModelMixin, 
@@ -85,6 +102,14 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
         instance.visibility = VisibilityState.DELETE.value
         instance.save()
 
+    @swagger_auto_schema( operation_id = "Partial update a company", tags = ["Companies"], request_body = UpdateCompanySerializer,
+        responses = { 200: CompanyModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"name": ["This field must be unique"]}
+            })
+        }, security = [{ "api-key": [] }]
+    )
     def partial_update(self, request, *args, **kwargs):
         """Handle company partial update and add a 
         image to a company logo by its id if its the case"""
@@ -108,6 +133,10 @@ class CompanyViewSet(mixins.RetrieveModelMixin,
         return Response(data, status = data_status)
 
 
+@method_decorator(name = 'retrieve', decorator = swagger_auto_schema( operation_id = "Retrieve a company summary", tags = ["Companies"],
+    operation_description = "Endpoint to retrieve the summary of a company",
+    responses = { 200: CompanySummarySerializer, 404: openapi.Response("Not Found")}, security = []
+))
 class CompanySummaryViewSet(mixins.RetrieveModelMixin,
                             mixins.UpdateModelMixin, 
                             viewsets.GenericViewSet):
@@ -146,9 +175,16 @@ class CompanySummaryViewSet(mixins.RetrieveModelMixin,
     def get_object(self):
         return self.company
 
+    @swagger_auto_schema( operation_id = "Update a company summary", tags = ["Companies"], request_body = UpdateCompanySerializer,
+        responses = { 200: CompanyModelSerializer, 404: openapi.Response("Not Found"),
+            401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
+            400: openapi.Response("Bad request", examples = {"application/json":
+                {"name": ["This field must be unique"]}
+            })
+        }, security = [{ "api-key": [] }]
+    )
     def partial_update(self, request, *args, **kwargs):
-        """Handle company partial update and add a 
-        image to a company logo by its id if its the case"""
+        """Endpoint to partial update the summary of a company"""
         try:
             instance = self.get_object()
             company_serializer = UpdateCompanySummarySerializer(

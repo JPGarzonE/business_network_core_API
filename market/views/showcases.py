@@ -1,5 +1,10 @@
 """Market showcases views."""
 
+# Django
+from django.db import transaction
+from django.utils.decorators import method_decorator
+from django.http import Http404
+
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -7,10 +12,9 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
 
-# Django
-from django.db import transaction
-from django.utils.decorators import method_decorator
-from django.http import Http404
+# Documentation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 # Serializers
 from market.serializers.showcases import ShowcaseSerializer, ShowcaseSectionModelSerializer
@@ -19,6 +23,15 @@ from market.serializers.showcases import ShowcaseSerializer, ShowcaseSectionMode
 from market.models import ShowcaseProduct, ShowcaseSection
 
 
+@method_decorator( name = 'get', decorator = swagger_auto_schema( 
+    operation_id = "List market showcase", tags = ["Market"], 
+    operation_description = """
+        Endpoint to list all the showcase of the main market of the platform.\n
+        Lists all the data feed belonging to the market.
+        The data contains products divided by categories.\n 
+        (The products are inside the list `section_elements` of the category)""",
+    responses = { 404: openapi.Response("Not Found") }, security = []
+))
 class ShowcaseFeedView(ListAPIView):
     """Lists all the data feed belonging to the market
     
@@ -29,6 +42,7 @@ class ShowcaseFeedView(ListAPIView):
     serializer_class = ShowcaseSectionModelSerializer
 
     def list(self, request, *args, **kwargs):
+
         showcase_section_queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(showcase_section_queryset)

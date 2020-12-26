@@ -38,6 +38,27 @@ class ProfileCompanyModelSerializer(serializers.ModelSerializer):
         )
 
 
+class DocumentationSupplierProfileSerializer(serializers.Serializer):
+    """This serializer is created uniquely for display 
+    correctly the field data types for the API documentation"""
+
+    editable = serializers.BooleanField()
+
+    company = ProfileCompanyModelSerializer()
+
+    principal_contact = ContactModelSerializer()
+
+    principal_location = CompanyLocationNestedModelSerializer()
+
+    sale_locations = CompanySaleLocationModelSerializer()
+
+    products = ProductOverviewModelSerializer(many = True)
+
+    certificates = CompanyCertificateModelSerializer(many = True)
+
+    unregistered_relationships = UnregisteredRelationshipModelSerializer(many = True)
+
+
 class SupplierProfileSerializer(serializers.Serializer):
     """Serializer for the data in a supplier profile."""
 
