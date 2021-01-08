@@ -28,7 +28,7 @@ from ..serializers import (
     BuyerProfileModelSerializer, 
     SignupBuyerSerializer
 )
-from companies.serializers import CompanyModelSerializer
+from companies.serializers import CompanyModelSerializer, SignupDocumentationResponseSerializer
 
 
 @method_decorator(name = 'list', decorator = swagger_auto_schema( operation_id = "List Buyers", tags = ["Buyers"],
@@ -118,7 +118,7 @@ class BuyerViewSet(mixins.RetrieveModelMixin,
     
 
     @swagger_auto_schema( operation_id = "Signup a Buyer", tags = ["Authentication"], request_body = SignupBuyerSerializer,
-        responses = { 201: openapi.Response( "Company created", CompanyModelSerializer), 
+        responses = { 201: openapi.Response( "Company created", SignupDocumentationResponseSerializer), 
             400: openapi.Response("Bad request", examples = {"application/json": [
                 {"password_confirmation": ["This field is required"], "name": ["There is alredy a company with this name"],
                 "non_field_errors": ["las contraseñas no concuerdan"] }

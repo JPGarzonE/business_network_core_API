@@ -54,6 +54,15 @@ class CompanyModelSerializer(serializers.ModelSerializer):
         )
 
 
+class SignupDocumentationResponseSerializer(serializers.Serializer):
+    """Serializer created uniquely for display correctly 
+    the response data of the signup endpoints"""
+
+    company = CompanyModelSerializer()
+
+    access_token = serializers.CharField()
+
+
 class UpdateCompanySerializer(serializers.ModelSerializer):
     """Modelserializer for update a company"""
 
