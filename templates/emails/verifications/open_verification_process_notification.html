@@ -7,9 +7,16 @@
     <li>Company NIT: {{company.nit}}</li> <br />
     <li>Company Industry: {{company.industry}}</li> <br />
     <li>
-        Certificate URL (This link is going to expire in 6 hours): {{certificate_url}}
+        Certificates URL files (This links are going to expire in 6 hours):
+        <ul>
+        {% for certificate_url in certificates_urls %}
+            <li>{{certificate_url}}<li>
+        {% endfor %}
+        </ul>
+        <br/>
+        {{certificate_url}}
         <span style="color:#808080d4;font-weight:700;">
-            * If the certificate URL expires you have to request another with your admin credentials in 
+            * If the certificates URLs expires you have to request others with your admin credentials in 
             <a href="https://joinconecty.com/admin/">https://joinconecty.com/admin/</a>
         </span>
     </li> <br />

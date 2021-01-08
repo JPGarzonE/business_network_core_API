@@ -1,4 +1,7 @@
-# companies/views/unregistered_relationships.py
+# Models unregistered_relationships
+
+# Constants
+from ..constants import VisibilityState
 
 # Django-rest framework
 from rest_framework import mixins, status, viewsets
@@ -18,19 +21,25 @@ from drf_yasg import openapi
 from django.db.utils import IntegrityError
 
 # Models
-from companies.models import Company, UnregisteredRelationship, UnregisteredCompany, VisibilityState
+from ..models import Company, UnregisteredRelationship, UnregisteredCompany
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from companies.permissions import IsCompanyAccountOwner, IsUnregisteredRelationOwner
+from ..permissions import IsCompanyMemberWithEditPermission
 
 # Seralizers
-from companies.serializers import (
+from ..serializers import (
     UnregisteredRelationshipModelSerializer, 
     CreateUnregisteredRelationshipSerializer,
     UpdateUnregisteredRelationshipSerializer
 )
 
+
+@method_decorator( name = 'list', decorator = swagger_auto_schema( 
+    operation_id = "List unregistered relationships", tags = ["Unregistered Relationships"], 
+    operation_description = "Endpoint to list all the unregistered relationships of a company",
+    responses = { 404: openapi.Response("Not Found") }, security = []
+) )
 @method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
     operation_id = "Retrieve an unregistered relationship", tags = ["Unregistered Relationships"],
     operation_description = "Endpoint to retrieve an unregistered relationship by its id",
@@ -45,36 +54,57 @@ from companies.serializers import (
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
         }, security = [{ "api-key": [] }]
 ))
-class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
+class UnregisteredRelationshipViewSet(mixins.ListModelMixin,
+                                    mixins.CreateModelMixin,
                                     mixins.RetrieveModelMixin,
                                     mixins.UpdateModelMixin,
                                     mixins.DestroyModelMixin,
                                     viewsets.GenericViewSet):
     """Unregistered Relationship view set."""
 
-    queryset = UnregisteredRelationship.objects.all()
     serializer_class = UnregisteredRelationshipModelSerializer
+    requester_company = None
+
+    def dispatch(self, request, *args, **kwargs):
+        requester_company_accountname = kwargs['requester_company_accountname']
+        self.requester_company = get_object_or_404(Company, accountname = requester_company_accountname)
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['retrieve']:
+        if self.action in ['list', 'retrieve']:
             permissions = [AllowAny]
-        elif self.action in ['create']:
-            permissions = [IsAuthenticated]
         else:
-            permissions = [IsAuthenticated, IsUnregisteredRelationOwner]
+            permissions = [IsAuthenticated, IsCompanyMemberWithEditPermission]
 
         return [permission() for permission in permissions]
 
+    
+    def get_data_owner_company(self):
+        """Return the company owner of the data 
+        (Requester of the Unregistered Relationship)"""
+
+        return self.requester_company
+ 
+
     def get_object(self):
         """Return the unregistered relationship by the id"""
-        unregistered_relationship = get_object_or_404(
+
+        return get_object_or_404(
             UnregisteredRelationship,
             id = self.kwargs['pk'],
+            requester = self.requester_company,
             visibility = VisibilityState.OPEN.value
         )
 
-        return unregistered_relationship
+    def get_queryset(self):
+        """Return company unregistered relationships"""
+
+        return UnregisteredRelationship.objects.filter(
+            requester = self.requester_company,
+            visibility = VisibilityState.OPEN.value
+        )
 
     @transaction.atomic
     def perform_destroy(self, instance):
@@ -102,12 +132,11 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
         It create it passing the id of an unregistered company that alredy exists in the platform.\n
         Or with the data of the company for creating a new unregistered company.
         """
-        self.company = Company.objects.get( user = request.user )
 
         try:
             unregistered_relationship_serializer = CreateUnregisteredRelationshipSerializer(
                 data = request.data,
-                context = {"requester": self.company}
+                context = {"requester": self.requester_company}
             )
 
             unregistered_relationship_serializer.is_valid(raise_exception = True)
@@ -118,7 +147,7 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
             except IntegrityError as e:
                 unregistered = UnregisteredCompany.objects.get( id = request.data.get("unregistered_id") )
                 reborn_relationship = UnregisteredRelationship.objects.get(
-                    requester = self.company,
+                    requester = self.requester_company,
                     unregistered = unregistered
                 )
 
@@ -170,30 +199,3 @@ class UnregisteredRelationshipViewSet(mixins.CreateModelMixin,
             data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
-
-
-@method_decorator( name = 'get', decorator = swagger_auto_schema( operation_id = "List unregistered relationships", tags = ["Unregistered Relationships"], 
-    operation_description = "Endpoint to list all the unregistered relationships of a company",
-    responses = { 404: openapi.Response("Not Found") }, security = []
-) )
-class ListUnregisteredRelationships(ListAPIView):
-    """API view to list all Unregistered Relationships of a user"""
-
-    serializer_class = UnregisteredRelationshipModelSerializer
-
-    def get_queryset(self):
-        """Return company unregistered relationship objects"""
-        return UnregisteredRelationship.objects.filter(
-            requester = self.company,
-            visibility = VisibilityState.OPEN.value
-        )
-    
-    def list(self, request, *args, **kwargs):
-        """Handle the list event."""   
-        username = kwargs['username']
-        self.company = get_object_or_404(Company, user__username = username)
-
-        return super(ListUnregisteredRelationships, self).list(request, *args, **kwargs)
-        
-    
-

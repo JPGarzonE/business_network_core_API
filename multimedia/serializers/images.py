@@ -1,5 +1,6 @@
-"""Media serializer."""
+# Serializer images
 
+# OS
 import os
 
 # Django rest framework
@@ -10,11 +11,19 @@ from django.core.files.images import get_image_dimensions
 from django.db import transaction
 
 # Models
-from users.models import User
 from multimedia.models import Image
 
 # Storages
-from multimedia.storages import VideoStorage, ImageStorage
+from multimedia.storages import ImageStorage
+
+
+def serialize_image_relative_path(image_relative_path):
+    """Method that take the relative path of an uploaded
+    image in s3 and returns the signed path for that image."""
+
+    image_storage = ImageStorage()
+
+    return image_storage.url(image_relative_path)
 
 
 class ImageModelSerializer(serializers.ModelSerializer):
@@ -29,7 +38,6 @@ class ImageModelSerializer(serializers.ModelSerializer):
 
         fields = (
             'id',
-            'user',
             'name',
             'path',
             'width',
@@ -52,10 +60,9 @@ class ImageModelSerializer(serializers.ModelSerializer):
         )
 
     def get_path(self, instance):
-        image_storage = ImageStorage()
         image_path = instance.relative_path
 
-        return image_storage.url(image_path)
+        return serialize_image_relative_path(image_path)
 
 
 class CreateImageSerializer(serializers.Serializer):
@@ -71,6 +78,7 @@ class CreateImageSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, data):
         """Create and store a new image"""
+
         user = self.context['user']
         image_object = data.get("image")
         
@@ -81,7 +89,6 @@ class CreateImageSerializer(serializers.Serializer):
         _, image_extension = os.path.splitext(image_object.name)
 
         image = Image.objects.create(
-            user = user,
             width = image_width,
             height = image_height,
             size = image_size,

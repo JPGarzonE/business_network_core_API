@@ -58,11 +58,12 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    'companies',
-    'market',
     'multimedia',
+    'companies',
+    'suppliers',
+    'buyers',
+    'market',
     'searches',
-    'users',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -113,16 +114,11 @@ DATABASES = {
     #     'HOST': '127.0.0.1',
     #     'PORT': '3306',
     # },
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.mysql',
-    #     'NAME': 'bizlookdb',
-    #     'USER': 'admin',
-    #     'PASSWORD': 'bizlookadmindatabase0899',
-    #     'HOST': 'bizlook-db.cbs9dsbiuvh9.us-west-1.rds.amazonaws.com',
-    #     'PORT': '3306',
-    # },
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
+        # 'OPTIONS': {
+        #     'options': '-c search_path=test_migration_schema'
+        # },
         'NAME': 'conectydb',
         'USER': 'dbmanager',
         'PASSWORD': 'conectyadmindatabase0899',
@@ -151,7 +147,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'companies.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -245,7 +241,7 @@ SWAGGER_SETTINGS = {
             'description': """
                 To authenticate a request, the `Authorization` header must be provided along with the user auth token (A bearer token). \n
                 The respective value of the Authorization header must have the format: `Token <auth_token>`.\n
-                This auth token is provided in the below **Authorization** section by the `login` or `signup` endpoints.
+                This auth token is provided in the below **Authentication** section by the `login` or `signup` endpoints.
             """
         }
    }

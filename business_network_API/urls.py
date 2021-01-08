@@ -24,8 +24,8 @@ schema_view = get_schema_view(
       title="Conecty API",
       default_version='v1',
       description="API Documentation for the core API of Conecty platform",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets.local"),
+      terms_of_service="",
+      contact=openapi.Contact(email=""),
       license=openapi.License(name="BSD License"),
    ),
    public=True,
@@ -35,8 +35,9 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path('', include('users.urls')),
     path('', include('companies.urls')),
+    path('', include('suppliers.urls')),
+    path('', include('buyers.urls')),
     path('', include('multimedia.urls')),
     path('search/', include('searches.urls')),
     path('market/', include('market.urls')),

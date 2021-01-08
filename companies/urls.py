@@ -1,102 +1,74 @@
-# companies/urls.py
+# users/urls.py
 
 from django.urls import include, path
 from rest_framework import routers
-from companies.views import (
-    UnregisteredCompanyViewSet, UnregisteredRelationshipViewSet, CompanyViewSet,
-    CompanyLocationViewSet, CompanySaleLocationViewSet, ContactViewSet,
-    ProductViewSet, ServiceViewSet, DnaelementViewSet, InterestViewSet,
-    CompanyCertificateViewSet, CurrencyViewSet, CertificateDetailView,
-    CompanyProfileView, CompanySummaryViewSet, ListUnregisteredRelationships,
-    DnaelementDetailView, ProductDetailView, DeleteProductCertificateView,
-    DeleteProductImageView, ServiceDetailView
+from .views import (
+    VerifyCompanyAPIView, 
+    RelationshipViewSet,
+    SentRelationshipRequestViewSet,
+    RecievedRelationshipRequestViewSet,
+    RelationshipRequestViewSet,
+    UserIdentityAPIView,
+    UserViewSet, 
+    CompanyVerificationAPIView,
+    CompanyVerificationTokenAPIView,
+    RestorePasswordAPIView,
+    CompanyViewSet,
+    UnregisteredCompanyViewSet,
+    UnregisteredRelationshipViewSet
 )
-
 
 router = routers.DefaultRouter()
-
-router.register(
-    'companies/unregistered',
-    UnregisteredCompanyViewSet,
-    basename = 'unregistered_companies'
-)
-router.register(
-    'relationships/unregistered',
-    UnregisteredRelationshipViewSet,
-    basename = 'unregistered_relationships'
-)
+router.register('users', UserViewSet)
 router.register(
     'companies', 
     CompanyViewSet,
     basename = 'companies'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/locations',
-    CompanyLocationViewSet,
-    basename = 'Operative location'
+    'companies/unregistered',
+    UnregisteredCompanyViewSet,
+    basename = 'unregistered_companies'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/sale-locations',
-    CompanySaleLocationViewSet,
-    basename = 'Sale location'
+    'companies/(?P<requester_company_accountname>[\w.]+)/relationships/unregistered',
+    UnregisteredRelationshipViewSet,
+    basename = 'unregistered_relationships'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/contacts',
-    ContactViewSet,
-    basename = 'contact'
+    'companies/(?P<accountname>[\w.]+)/relationships',
+    RelationshipViewSet,
+    basename = 'relationship'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/products',
-    ProductViewSet,
-    basename = 'product'
+    'companies/(?P<accountname>[\w.]+)/relationship-requests/sent',
+    SentRelationshipRequestViewSet,
+    basename = 'sent_relationship_request'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/services',
-    ServiceViewSet,
-    basename = 'service'
+    'companies/(?P<accountname>[\w.]+)/relationship-requests/recieved',
+    RecievedRelationshipRequestViewSet,
+    basename = 'recieved_relationship_request'
 )
 router.register(
-    'companies/(?P<username>[\w.]+)/dnaelements',
-    DnaelementViewSet,
-    basename = 'dnaelement'
-)
-router.register(
-    'companies/(?P<username>[\w.]+)/interests',
-    InterestViewSet,
-    basename = 'interest'
-)
-
-router.register(
-    'companies/(?P<username>[\w.]+)/certificates',
-    CompanyCertificateViewSet,
-    basename = 'certificates'
-)
-
-router.register(
-    'currencies',
-    CurrencyViewSet,
-    basename = 'currencies'
+    'companies/(?P<target_company_accountname>[\w.]+)/relationship-requests/(?P<requester_company_accountname>[\w.]+)',
+    RelationshipRequestViewSet,
+    basename = 'external_relationship_request'
 )
 
 urlpatterns = [
+    path('me/', UserIdentityAPIView.as_view(), name = 'user_me'),
+    path('companies/<accountname>/verification/', CompanyVerificationAPIView.as_view(), name = 'company_verification'),
+    path('me/restores/password/', RestorePasswordAPIView.as_view(), name = 'Restore password'),
+
+    path('companies/verification/verify/', VerifyCompanyAPIView.as_view(), name = 'verify_company'),
+    path('companies/<accountname>/verification/token/', CompanyVerificationTokenAPIView.as_view(), name="company_verification_token"),
+
     path('', include(router.urls)),
 
-    path('certificates/<int:pk>/', CertificateDetailView.as_view()),
-
-    path('companies/<username>/profile/', CompanyProfileView.as_view()),
-
-    path('companies/<username>/summary/', CompanySummaryViewSet.as_view({'get': 'retrieve', 'patch': 'partial_update'})),
-
-    path('companies/<username>/relationships/unregistered/', ListUnregisteredRelationships.as_view()),
-
-    path('dnaelements/<int:pk>/', DnaelementDetailView.as_view()),
-
-    path('products/<int:pk>/', ProductDetailView.as_view()),
-
-    path('products/<int:product_id>/certificates/<int:certificate_id>/', DeleteProductCertificateView.as_view()),
-
-    path('products/<int:product_id>/images/<int:image_id>/', DeleteProductImageView.as_view()),
-
-    path('services/<int:pk>/', ServiceDetailView.as_view()),
+    path(
+        'api-auth/', 
+        include('rest_framework.urls', namespace = 'rest_framework'),
+    ),
 
 ]

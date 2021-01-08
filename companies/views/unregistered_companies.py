@@ -1,7 +1,8 @@
-# views/unregisterd_companies.py
+# Views unregistered_companies
 
 # Django
 from django.utils.decorators import method_decorator
+from django.db.models import Q
 
 # Django-rest framework
 from rest_framework import mixins, status, viewsets
@@ -13,11 +14,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Seralizers
-from companies.serializers import UnregisteredCompanyModelSerializer
+from ..serializers import UnregisteredCompanyModelSerializer
 
 # Models
-from companies.models import UnregisteredCompany
-from django.db.models import Q
+from ..models import UnregisteredCompany
 
 # Permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -28,7 +28,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
     operation_description = "Endpoint to list all the unregistered companies registered in the platform",
     manual_parameters = [
         openapi.Parameter(name = "name", in_ = openapi.IN_QUERY, type = "String"),
-        openapi.Parameter(name = "nit", in_ = openapi.IN_QUERY, type = "String"),
+        openapi.Parameter(name = "legal_identifier", in_ = openapi.IN_QUERY, type = "String"),
         openapi.Parameter(name = "email", in_ = openapi.IN_QUERY, type = "String")
     ],
     responses = { 404: openapi.Response("Not Found") }, security = []
@@ -59,17 +59,17 @@ class UnregisteredCompanyViewSet(mixins.RetrieveModelMixin,
     def get_queryset(self):
         """Return unregistered companies"""
         name = self.request.query_params.get('name')
-        nit = self.request.query_params.get('nit')
+        legal_identifier = self.request.query_params.get('legal_identifier')
         email = self.request.query_params.get('email')
         query = None
 
         if name:
             query = Q(name__iexact = name)
-        if nit:
+        if legal_identifier:
             if query:
-                query = query & Q(nit__iexact = nit)
+                query = query & Q(legal_identifier__iexact = legal_identifier)
             else:
-                query = Q(nit__iexact = nit)
+                query = Q(legal_identifier__iexact = legal_identifier)
         if email:
             if query:
                 query = query & Q(email__iexact = email)

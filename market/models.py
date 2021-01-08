@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 # Models
-from companies.models import Product
+from suppliers.models import Product
 from multimedia.models import Image
 
 # Create your models here.
@@ -22,8 +22,8 @@ class ShowcaseProduct(models.Model):
     principal_image = models.ForeignKey(Image, models.PROTECT, null = True)
     showcase_section = models.ForeignKey(ShowcaseSection, models.PROTECT)
     product = models.ForeignKey(Product, models.PROTECT)
-    company_name = models.CharField(max_length=60)
-    company_username = models.CharField(max_length=50)
+    supplier_name = models.CharField(max_length=60)
+    supplier_accountname = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'showcaseproduct'

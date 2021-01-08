@@ -1,9 +1,9 @@
 # Models
-from companies.models import Product
+from suppliers.models import Product
 from market.models import ShowcaseProduct, ShowcaseSection
 
 # Signals
-from companies.signals import post_product_delete, post_product_create, post_product_update
+from suppliers.signals import post_product_delete, post_product_create, post_product_update
 from django.dispatch import receiver
 
 
@@ -26,16 +26,16 @@ def create_showcase_product(instance):
         principal_image = instance.principal_image,
         product = instance,
         showcase_section = showcase_section,
-        company_name = instance.company.name,
-        company_username = instance.company.user.username
+        supplier_name = instance.supplier.display_name,
+        supplier_accountname = instance.company.user.username
     )
 
 
 def update_showcase_product(instance, showcase_product):
-    if not showcase_product.company_name:
-        showcase_product.company_name = instance.company.name
-    if not showcase_product.company_username:
-        showcase_product.company_username = instance.company.user.username
+    if not showcase_product.supplier_name:
+        showcase_product.supplier_name = instance.supplier.display_name
+    if not showcase_product.supplier_accountname:
+        showcase_product.supplier_accountname = instance.supplier.company.accountname
 
     showcase_product.name = instance.name
     showcase_product.tariff_heading = instance.tariff_heading

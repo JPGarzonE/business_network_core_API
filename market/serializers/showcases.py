@@ -29,8 +29,8 @@ class ShowcaseProductModelSerializer(serializers.ModelSerializer):
             'tariff_heading',
             'description',
             'principal_image',
-            'company_name',
-            'company_username',
+            'supplier_name',
+            'supplier_accountname',
             'product'
         )
 

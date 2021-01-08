@@ -1,4 +1,4 @@
-# companies/serializers/unregistered_reltionships.py
+# Serializers unregistered_relationships
 
 # Django rest framework
 from rest_framework import serializers
@@ -8,10 +8,11 @@ from rest_framework.generics import get_object_or_404
 from django.db import transaction
 
 # Models
-from companies.models import UnregisteredRelationship, UnregisteredCompany
+from ..models import UnregisteredRelationship, UnregisteredCompany
 
 # Serializers
-from companies.serializers import UnregisteredCompanyModelSerializer
+from ..serializers import UnregisteredCompanyModelSerializer
+
 
 class UnregisteredRelationshipModelSerializer(serializers.ModelSerializer):
     """Unregistered Relationship model serializer."""

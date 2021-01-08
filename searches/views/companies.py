@@ -37,7 +37,6 @@ class SearchCompaniesViewSet(viewsets.GenericViewSet,
     serializer_class = CompanyModelSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend]
     search_fields = ['name', 'description']
-    filterset_fields = ['industry']
 
 
 @method_decorator(name = 'list', decorator = swagger_auto_schema(

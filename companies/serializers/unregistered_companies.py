@@ -1,4 +1,4 @@
-# serializers/unregistered_companies.py
+# Serializers unregistered_companies
 
 # Django-rest serializers
 from rest_framework import serializers
@@ -9,7 +9,8 @@ from django.core.validators import RegexValidator
 from django.db import transaction
 
 # Models
-from companies.models import UnregisteredCompany
+from ..models import UnregisteredCompany
+
 
 class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
 
@@ -17,12 +18,12 @@ class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
         max_length=60
     )
 
-    nit = serializers.CharField(
+    legal_identifier = serializers.CharField(
         max_length = 11,
         validators = [
             RegexValidator(
                 regex = r'(\d{9,9}((.)\d)?)',
-                message = "El nit debe estar acorde al formato de la registraduria"
+                message = "El identificar legal debe estar acorde al formato exigído"
             )
         ],
 
@@ -55,6 +56,22 @@ class UnregisteredCompanyModelSerializer(serializers.ModelSerializer):
         allow_blank = True
     )
 
+    is_contactable = serializers.BooleanField(
+        default = False,
+        required = False,
+        allow_null = True
+    )
+
     class Meta():
         model = UnregisteredCompany
-        fields = ('id', 'name', 'nit', 'industry', 'email', 'city', 'country')
+
+        fields = (
+            'id', 
+            'name', 
+            'legal_identifier', 
+            'industry', 
+            'email', 
+            'country',
+            'city',
+            'is_contactable'
+        )

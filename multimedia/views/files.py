@@ -1,4 +1,4 @@
-# File views
+# Views files
 
 # Django
 from django.utils.decorators import method_decorator
@@ -15,7 +15,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
-from multimedia.models import Document
+from multimedia.models import File
 
 # Permissions
 from rest_framework.permissions import (
@@ -24,7 +24,7 @@ from rest_framework.permissions import (
 )
 
 # Serializer
-from multimedia.serializers import DocumentModelSerializer, CreateDocumentSerializer
+from multimedia.serializers import FileModelSerializer, CreateFileSerializer
 
 
 @method_decorator( name = 'list', decorator = swagger_auto_schema(
@@ -35,7 +35,7 @@ from multimedia.serializers import DocumentModelSerializer, CreateDocumentSerial
 @method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
     operation_id = "Retrieve a file", tags = ["Files"], security = [],
     operation_description = "Endpoint to retrieve a file previously uploaded by its id.",
-    responses = { 200: DocumentModelSerializer, 404: openapi.Response("Not Found")}
+    responses = { 200: FileModelSerializer, 404: openapi.Response("Not Found")}
 ))
 class FileViewSet(mixins.ListModelMixin,
                 mixins.CreateModelMixin,
@@ -43,8 +43,8 @@ class FileViewSet(mixins.ListModelMixin,
                 viewsets.GenericViewSet):
     """File view set"""
 
-    serializer_class = DocumentModelSerializer
-    queryset = Document.objects.all()
+    serializer_class = FileModelSerializer
+    queryset = File.objects.all()
     parser_classes = (MultiPartParser, FormParser)
 
     def get_permissions(self):
@@ -59,16 +59,15 @@ class FileViewSet(mixins.ListModelMixin,
         return [permission() for permission in permissions]
 
     def get_object(self):
-        document = get_object_or_404(
-            Document,
+        file = get_object_or_404(
+            File,
             id = self.kwargs['pk']
         )
 
-        return document
+        return file
 
-
-    @swagger_auto_schema( tags = ["Files"], request_body = CreateDocumentSerializer,
-        responses = { 200: DocumentModelSerializer, 404: openapi.Response("Not Found"),
+    @swagger_auto_schema( tags = ["Files"], request_body = CreateFileSerializer,
+        responses = { 200: FileModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }),
             400: openapi.Response("Bad request", examples = {"application/json": {"file": ["This field required"]} })
         }, security = [{ "api-key": [] }]
@@ -82,15 +81,15 @@ class FileViewSet(mixins.ListModelMixin,
         # The user is identified by its auth token
         user = request.user
 
-        document_serializer = CreateDocumentSerializer(
+        file_serializer = CreateFileSerializer(
             data = request.data,
             context = {'user': user}
         )
 
-        document_serializer.is_valid(raise_exception = True)
-        document = document_serializer.save()
+        file_serializer.is_valid(raise_exception = True)
+        file = file_serializer.save()
 
-        data = self.get_serializer(document).data
+        data = self.get_serializer(file).data
         data_status = status.HTTP_201_CREATED
 
         return Response(data, status = data_status)
