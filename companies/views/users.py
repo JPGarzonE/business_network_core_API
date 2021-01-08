@@ -138,13 +138,15 @@ class UserIdentityAPIView(APIView):
         """Handle HTTP get for retrieving a user according its access token"""
         user_companies = self.get_user_companies(request.user)
 
-        serializer = UserAccessSerializer(
-            user = request.user,
-            default_company = user_companies[:1].company,
-            other_companies = user_companies[1:]
-        )
+        user_access = {
+            'user': request.user,
+            'default_company': user_companies[0].company if user_companies else None,
+            'other_companies': user_companies[1:]
+        }
 
-        data = serializer.data
+        user_serializer = UserAccessSerializer( user_access )
+
+        data = user_serializer.data
 
         return Response( data, status.HTTP_200_OK)
 
