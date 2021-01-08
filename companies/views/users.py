@@ -101,11 +101,13 @@ class UserViewSet(mixins.ListModelMixin,
 
         user_companies = self.get_user_companies(user)
 
-        user_serializer = UserAccessSerializer(
-            user = user,
-            default_company = user_companies[:1].company,
-            other_companies = user_companies[1:]
-        )
+        user_access = {
+            'user': user,
+            'default_company': user_companies[0].company if user_companies else None,
+            'other_companies': user_companies[1:]
+        }
+
+        user_serializer = UserAccessSerializer( user_access )
 
         data = {
             'access_token': token,
