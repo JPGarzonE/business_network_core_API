@@ -44,7 +44,7 @@ from distutils.util import strtobool
     }
 ))
 @method_decorator( name = 'retrieve', decorator = swagger_auto_schema( 
-    operation_id = "Retrieve sale location", tags = ["Supplier Locations"], security = [{ "api-key": [] }],
+    operation_id = "Retrieve sale location", tags = ["Supplier Locations"], security = [],
     operation_description = "Endpoint to retrieve a location where a supplier sales by its id.",
     responses = { 200: SupplierSaleLocationModelSerializer, 404: openapi.Response("Not Found")}
 ))

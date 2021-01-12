@@ -26,9 +26,15 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from ..serializers import CurrencyModelSerializer
 
 
-@method_decorator(name='list', decorator = swagger_auto_schema( operation_id = "List currencies", tags = ["Currencies"],
+@method_decorator(name='list', decorator = swagger_auto_schema( 
+    operation_id = "List currencies", tags = ["Currencies"],
     operation_description = "Endpoint to list all the currencies available in the platform",
     responses = { 404: openapi.Response("Not Found") }, security = []
+))
+@method_decorator(name='retrieve', decorator = swagger_auto_schema( 
+    operation_id = "Retrieve currency", tags = ["Currencies"],
+    operation_description = "Endpoint to retrieve a currency available in the platform",
+    responses = { 404: openapi.Response("Not Found")}, security = []
 ))
 @method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class CurrencyViewSet(mixins.ListModelMixin,

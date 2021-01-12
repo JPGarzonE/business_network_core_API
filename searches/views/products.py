@@ -27,7 +27,7 @@ class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
 
     serializer_class = ShowcaseProductModelSerializer
     filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
-    filterset_fields = ['name', 'tariff_heading', 'company_name', 'company_username']
+    filterset_fields = ['name', 'tariff_heading', 'supplier_name', 'supplier_accountname']
 
     def get_query_fields(self):
         """Return the list of query_fields"""
@@ -53,8 +53,8 @@ class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
         if query_fields_empty or 'tariff_heading' in query_fields:
             query_statement |= Q(tariff_heading__unaccent__icontains = query)
 
-        if query_fields_empty or 'company_name' in query_fields:
-            query_statement |= Q(company_name__unaccent__icontains = query)
+        if query_fields_empty or 'supplier_name' in query_fields:
+            query_statement |= Q(supplier_name__unaccent__icontains = query)
 
         return query_statement
 
@@ -77,17 +77,17 @@ class SearchShowcaseProductsViewSet(viewsets.GenericViewSet,
                 description = """
                     Fields where the query `q` is going to be executed.\n
                     This param accepts a list of fields separated by commas. (Ej: `query_fields=name,description,...`)\n
-                    The possible fields for searching are: `name, description, tariff_heading and company_name`.\n
+                    The possible fields for searching are: `name, description, tariff_heading and supplier_name`.\n
                     If this param isnt specified the query is going to be executed over all the possible fields."""
             ),
             openapi.Parameter(name = "name", in_ = openapi.IN_QUERY, type = "String", 
                 description = "Param for filter the search by name. (Exact match)"),
             openapi.Parameter(name = "tariff_heading", in_ = openapi.IN_QUERY, type = "String", 
                 description = "Param for filter the search by tariff heading. (Exact match)"),
-            openapi.Parameter(name = "company_name", in_ = openapi.IN_QUERY, type = "String", 
-                description = "Param for filter the search by company name. (Exact match)"),
-            openapi.Parameter(name = "company_username", in_ = openapi.IN_QUERY, type = "String", 
-                description = "Param for filter the search by company username. (Exact match)")
+            openapi.Parameter(name = "supplier_name", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by supplier name. (Exact match)"),
+            openapi.Parameter(name = "supplier_username", in_ = openapi.IN_QUERY, type = "String", 
+                description = "Param for filter the search by supplier username. (Exact match)")
         ]
     )
     def list(self, request, *args, **kwargs):

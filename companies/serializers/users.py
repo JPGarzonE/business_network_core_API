@@ -29,23 +29,6 @@ from django.utils.translation import ugettext_lazy as _
 import jwt
 
 
-def generate_user_username(user_full_name):
-    """Recieve the name of the user and generate a valid username for it."""
-    username_lower = user_full_name.lower()
-    generated_username = username_lower.strip().replace(" ", ".")
-    i = 0
-    while True:
-        username = generated_username if i == 0 else generated_username + str(i)
-        try:
-            User.objects.get( username = username )
-        except User.DoesNotExist:
-            break
-        
-        i += 1
-    
-    return username
-
-
 class UserModelSerializer(serializers.ModelSerializer):
 
     class Meta:

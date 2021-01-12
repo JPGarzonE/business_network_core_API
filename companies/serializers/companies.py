@@ -16,23 +16,6 @@ from multimedia.models import Image
 from multimedia.serializers import ImageModelSerializer
 
 
-def generate_company_accountname(company_name):
-    """Recieve the name of the company and generate a valid accountname for it."""
-    accountname_lower = company_name.lower()
-    generated_accountname = accountname_lower.strip().replace(" ", ".")
-    i = 0
-    while True:
-        accountname = generated_accountname if i == 0 else generated_accountname + str(i)
-        try:
-            Company.objects.get( accountname = accountname )
-        except Company.DoesNotExist:
-            break
-        
-        i += 1
-    
-    return accountname
-
-
 class CompanyModelSerializer(serializers.ModelSerializer):
 
     logo = ImageModelSerializer(required = False)

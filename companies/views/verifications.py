@@ -51,7 +51,7 @@ class CompanyVerificationAPIView(APIView):
         responses = { 200: CompanyVerificationModelSerializer, 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} })}
     )
-    def get(self, request, format = None):
+    def get(self, request, accountname, format = None):
         """Retrieve Company Verification\n
             Endpoint to retrieve the verification of the company with the account name by url param.
         """
@@ -68,7 +68,7 @@ class CompanyVerificationAPIView(APIView):
             400: openapi.Response("Bad request") }
     )
     @transaction.atomic
-    def patch(self, request, user_id = None):
+    def patch(self, request, accountname, user_id = None):
         """Upload Company Verification Certificates\n
             Endpoint to upload the verification certificates that are required for verify a company.
         """
@@ -93,6 +93,10 @@ class CompanyVerificationAPIView(APIView):
     def get_object(self, request):
         return self.company.verification
 
+    def get_data_owner_company(self):
+        """Return the company owner of the data"""
+        return self.company
+
 
 class CompanyVerificationTokenAPIView(APIView):
     """Company verification token API view
@@ -113,7 +117,7 @@ class CompanyVerificationTokenAPIView(APIView):
                 {'token': 'token'}} ), 404: openapi.Response("Not Found"),
             401: openapi.Response("Unauthorized", examples = {"application/json": {"detail": "Invalid token."} }) 
         })
-    def get(self, request, format = None, **kwargs):
+    def get(self, request, accountname, format = None, **kwargs):
         """Company Verification Token\n
             Endpoint to retrieve the verification token of a company.
             This token is unique for each company and is used for verify the account of that company.\n

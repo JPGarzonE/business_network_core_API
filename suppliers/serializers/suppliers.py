@@ -24,7 +24,6 @@ from ..models import SupplierProfile, SupplierLocation, SupplierSaleLocation
 from multimedia.models import File
 
 # Serializers
-from companies.serializers import generate_company_accountname, generate_user_username
 from .locations import (
     SupplierLocationNestedModelSerializer, SupplierSaleLocationModelSerializer, 
     UpdateSupplierSummarySaleLocationSerializer, HandleSupplierSaleLocationSerializer,
@@ -110,9 +109,6 @@ class SignupSupplierSerializer(serializers.Serializer):
         """Handle supplier profile creation."""
         data.pop('password_confirmation')
 
-        username = generate_user_username( data.get('full_name') )
-        accountname = generate_company_accountname( data.get('name') )
-
         certificate = None
         if data.get('comercial_certificate_id'):
             certificate_id = data.pop("comercial_certificate_id")
@@ -120,29 +116,25 @@ class SignupSupplierSerializer(serializers.Serializer):
 
             if certificate:
                 verification = CompanyVerification.objects.create( 
-                    state = CompanyVerification.States.INPROGRESS )
+                    state = CompanyVerification.States.INPROGRESS.value )
 
                 company_verification_file = CompanyVerificationFile.objects.create(
                     company_verification = verification, file = certificate )
         else:
             verification = CompanyVerification.objects.create( 
-                state = CompanyVerification.States.NONE )
+                state = CompanyVerification.States.NONE.value )
 
         user = User.objects.create_user(
-            username = username, email = data.get('email'),
-            full_name = data.get('full_name'), password = data.get('password')
+            email = data.get('email'),
+            full_name = data.get('full_name'),
+            password = data.get('password')
         )
 
         company = Company.objects.create(
-            accountname = accountname, name = data.get('name'),
+            creator_user = user,
+            name = data.get('name'),
             legal_identifier = data.get('legal_identifier'), 
             verification = verification, is_supplier = True
-        )
-
-        CompanyMember.objects.create(
-            company = company, user = user, company_accountname = company.accountname,
-            company_name = company.name, user_email = user.email,
-            user_username = user.username, user_full_name = user.full_name
         )
 
         SupplierProfile.objects.create(company = company, 

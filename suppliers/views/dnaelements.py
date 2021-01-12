@@ -34,7 +34,7 @@ from ..serializers import DnaelementModelSerializer, HandleSupplierDnaelementSer
 ))
 @method_decorator(name='destroy', decorator = swagger_auto_schema( operation_id = "Delete a supplier DNA element", tags = ["Supplier DNA"],
     operation_description = "Endpoint to delete a DNA element of a supplier by username and id",
-    responses = { 404: openapi.Response("Not Found") }, security = []
+    responses = { 404: openapi.Response("Not Found") }, security = [{ "api-key": [] }]
 ))
 @method_decorator(name='update', decorator = swagger_auto_schema(auto_schema = None))
 class DnaelementViewSet(mixins.ListModelMixin,

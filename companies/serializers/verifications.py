@@ -208,6 +208,6 @@ class VerifyCompanySerializer(serializers.Serializer):
 
         verification = company.verification
         verification.verified = True
-        verification.state = CompanyVerification.States.SUCCESS
+        verification.state = CompanyVerification.States.SUCCESS.value
         verification.finish_date = timezone.now()
         verification.save()

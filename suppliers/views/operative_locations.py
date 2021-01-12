@@ -203,7 +203,8 @@ class SupplierLocationViewSet(mixins.ListModelMixin,
         return Response(data, status = data_status)
 
     @swagger_auto_schema( operation_id = "Retrieve operative location", tags = ["Supplier Locations"],
-        responses = { 404: openapi.Response("Not Found")}, security = [{ "api-key": [] }])
+        responses = { 404: openapi.Response("Not Found")}, security = []
+    )
     def retrieve(self, request, *args, **kwargs):
         """Endpoint to retrieve a location where a supplier operates by its id"""
 

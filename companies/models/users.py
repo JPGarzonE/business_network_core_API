@@ -14,9 +14,6 @@ from django.core.mail import send_mail
 # Django timezone
 from django.utils import timezone
 
-# Models
-from companies.models import Company
-
 
 class UserManager(BaseUserManager):
     """
@@ -24,23 +21,50 @@ class UserManager(BaseUserManager):
     instead of usernames. The default that's used is "UserManager"
     """
 
-    def _create_user(self, email, password, **extra_fields):
+    def _create_user(self, email, password, full_name, **extra_fields):
         """
         Creates and saves a User with the given email and password.
         """
         if not email:
             raise ValueError('The Email must be set')
+
+        if not full_name:
+            raise ValueError('The full_name must be set')
         
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        username = self.generate_username(full_name)
+
+        user = self.model(
+            email=email, 
+            username=username, 
+            full_name=full_name, 
+            **extra_fields
+        )
         user.set_password(password)
         user.save()
+
         return user
 
-    def create_user(self, email, password, **extra_fields):
+    def generate_username(self, full_name):
+        """Recieve the name of the user and generate a valid username for it."""
+        username_lower = full_name.lower()
+        generated_username = username_lower.strip().replace(" ", ".")
+        i = 0
+        while True:
+            username = generated_username if i == 0 else generated_username + str(i)
+            try:
+                self.get( username = username )
+            except User.DoesNotExist:
+                break
+            
+            i += 1
+        
+        return username
+
+    def create_user(self, email, password, full_name, **extra_fields):
         extra_fields.setdefault('is_staff', False)
         extra_fields.setdefault('is_superuser', False)
-        return self._create_user(email, password, **extra_fields)
+        return self._create_user(email, password, full_name, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -138,6 +162,21 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name_plural = _('users')
         db_table = 'auth_user'
 
+    def save(self, *args, **kwargs):
+        """Manage denormalization with the CompanyMember model."""
+
+        if self.pk:
+            user_companies = CompanyMember.objects.filter(
+                user = self)
+
+            for membership in user_companies:
+                membership.user_email = self.email
+                membership.user_username = self.username
+                membership.user_full_name = self.full_name
+                membership.save()
+
+        super(User, self).save(*args, **kwargs)
+
     def clean(self):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
@@ -162,7 +201,7 @@ class CompanyMember(models.Model):
     id = models.BigAutoField(primary_key=True)
 
     company = models.ForeignKey(
-        Company, verbose_name = _('company account'), on_delete = models.PROTECT,
+        'Company', verbose_name = _('company account'), on_delete = models.PROTECT,
         help_text = _('Company that is accesible for its members (user).')
     )
 

@@ -18,9 +18,6 @@ from django.utils.translation import ugettext_lazy as _
 from companies.models import Company, CompanyMember, User, CompanyVerification, CompanyMember
 from ..models import BuyerProfile
 
-# Serializers
-from companies.serializers import generate_company_accountname, generate_user_username
-
 
 class BuyerProfileModelSerializer(serializers.ModelSerializer):
     """Model serializer for the buyer profile model."""
@@ -98,27 +95,20 @@ class SignupBuyerSerializer(serializers.Serializer):
         """Handle supplier profile creation."""
         data.pop('password_confirmation')
 
-        username = generate_user_username( data.get('full_name') )
-        accountname = generate_company_accountname( data.get('name') )
-
         verification = CompanyVerification.objects.create( 
-            state = CompanyVerification.States.NONE )
+            state = CompanyVerification.States.NONE.value )
 
         user = User.objects.create_user(
-            username = username, email = data.get('email'),
-            full_name = data.get('full_name'), password = data.get('password')
+            email = data.get('email'),
+            full_name = data.get('full_name'), 
+            password = data.get('password')
         )
 
         company = Company.objects.create(
-            accountname = accountname, name = data.get('name'),
-            legal_identifier = data.get('legal_identifier'), 
+            creator_user = user,
+            name = data.get('name'),
+            legal_identifier = data.get('legal_identifier'),
             verification = verification, is_buyer = True
-        )
-
-        CompanyMember.objects.create(
-            company = company, user = user, company_accountname = company.accountname,
-            company_name = company.name, user_email = user.email,
-            user_username = user.username, user_full_name = user.full_name
         )
 
         BuyerProfile.objects.create(company = company, display_name = company.name)
