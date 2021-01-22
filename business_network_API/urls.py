@@ -36,6 +36,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('', include('companies.urls')),
+    path('', include('users.urls')),
     path('', include('suppliers.urls')),
     path('', include('buyers.urls')),
     path('', include('multimedia.urls')),

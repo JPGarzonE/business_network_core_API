@@ -51,7 +51,7 @@ class CurrencyViewSet(mixins.ListModelMixin,
         if self.action in ['list', 'retrieve']:
             permissions = [AllowAny]
         else:
-            permissions = [IsAdminUser]
+            permissions = [IsAuthenticated]
         
         return [permission() for permission in permissions]
 

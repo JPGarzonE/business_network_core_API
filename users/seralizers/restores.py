@@ -1,10 +1,11 @@
-"""Restores serializers."""
+# Serializers restores
 
 # Django
 from django.contrib.auth import password_validation
 
 # DRF
 from rest_framework import serializers
+
 
 class RestorePasswordSerializer(serializers.Serializer):
 

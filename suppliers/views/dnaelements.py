@@ -1,8 +1,5 @@
 # Views dnaelements
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.utils.decorators import method_decorator
 
@@ -72,8 +69,7 @@ class DnaelementViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         """Return supplier Dnaelements"""
         return DNAElement.objects.filter(
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
     def get_object(self):
@@ -81,17 +77,10 @@ class DnaelementViewSet(mixins.ListModelMixin,
         dnaelement = get_object_or_404(
             DNAElement,
             id = self.kwargs['pk'],
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return dnaelement
-
-    def perform_destroy(self, instance):
-        """Disable Dnaelement."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
-
 
     @swagger_auto_schema( tags = ["Supplier DNA"], request_body = HandleSupplierDnaelementSerializer,
         responses = { 200: DnaelementModelSerializer, 404: openapi.Response("Not Found"),
@@ -175,8 +164,7 @@ class DnaelementDetailView(APIView):
     def get_object(self, pk):
         dnaelement = get_object_or_404(
             DNAElement,
-            id = pk,
-            visibility = VisibilityState.OPEN.value
+            id = pk
         )
 
         return dnaelement

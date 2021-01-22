@@ -278,7 +278,7 @@ class RelationshipRequestViewSet(mixins.CreateModelMixin,
     """Relationship request viewset to send a relationship request to a target_company"""
 
     serializer_class = RelationshipRequestModelSerializer
-    target_user = None
+    target_company = None
     requester_company = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -302,7 +302,7 @@ class RelationshipRequestViewSet(mixins.CreateModelMixin,
 
     def get_data_owner_company(self):
         """Return the company owner of the data (Requester of the Relationship request)"""
-        return self.addressed_company
+        return self.requester_company
 
 
     @swagger_auto_schema( tags = ["Relationship Requests"], request_body = CreateRelationshipRequestSerializer,

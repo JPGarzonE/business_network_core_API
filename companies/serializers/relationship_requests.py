@@ -51,6 +51,8 @@ class CreateRelationshipRequestSerializer(serializers.Serializer):
     message = serializers.CharField(
         max_length=64, 
         required = False,
+        allow_null = True,
+        allow_blank = True,
         help_text = "message that could be sent to the addressed user with the request."
     )
 

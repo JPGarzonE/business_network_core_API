@@ -75,16 +75,15 @@ class ImageViewSet(mixins.ListModelMixin,
     )
     def create(self, request, *args, **kwargs):
         """Upload an image\n
-            Endpoint to upload an image to the platform. The image will register whose the user that uploaded it.\n
+            Endpoint to upload an image to the platform.\n 
+            The image will register whose the company where the user uploaded it.
+            Or the username if it is an independent user (like an admin).\n
             The request body schema has to be of `multipart/form-data`.
         """
 
-        # The user is identified by its auth token
-        user = request.user
-
         image_serializer = CreateImageSerializer(
             data = request.data,
-            context = {'user': user}
+            context = {'request': request}
         )
 
         image_serializer.is_valid(raise_exception = True)

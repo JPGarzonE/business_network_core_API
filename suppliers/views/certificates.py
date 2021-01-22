@@ -1,8 +1,5 @@
 # Views certificates
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -88,8 +85,7 @@ class SupplierCertificateViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         """Return supplier certificates"""
         supplier_certificates = SupplierCertificate.objects.filter(
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return supplier_certificates
@@ -99,16 +95,10 @@ class SupplierCertificateViewSet(mixins.ListModelMixin,
         supplier_certificate = get_object_or_404(
             SupplierCertificate,
             id = self.kwargs['pk'],
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return supplier_certificate
-
-    def perform_destroy(self, instance):
-        """Disable certificate."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
 
     @swagger_auto_schema( tags = ["Supplier Certificates"], request_body = CreateSupplierCertificateSerializer,
         responses = { 200: SupplierCertificateModelSerializer, 404: openapi.Response("Not Found"),

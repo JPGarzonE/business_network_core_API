@@ -49,6 +49,8 @@ class CompanyVerification(models.Model):
         blank=True, null=True
     )
 
+    files = models.ManyToManyField(File, verbose_name=_("files"), through = "CompanyVerificationFile")
+
     class Meta:
         db_table = 'company_verification'
 

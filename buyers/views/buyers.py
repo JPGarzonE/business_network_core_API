@@ -1,13 +1,10 @@
 # Views buyers
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.utils.decorators import method_decorator
 
 # Django-rest framework
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -17,6 +14,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
+from companies.models import Company
 from ..models import BuyerProfile
  
 # Permissions
@@ -24,11 +22,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from ..permissions import IsBuyerMemberWithEditPermission
  
 # Serializers
-from ..serializers import (
-    BuyerProfileModelSerializer, 
-    SignupBuyerSerializer
-)
-from companies.serializers import CompanyModelSerializer, SignupDocumentationResponseSerializer
+from ..serializers import BuyerProfileModelSerializer, ActivateBuyerSerializer
 
 
 @method_decorator(name = 'list', decorator = swagger_auto_schema( operation_id = "List Buyers", tags = ["Buyers"],
@@ -54,14 +48,11 @@ class BuyerViewSet(mixins.RetrieveModelMixin,
 
     def get_queryset(self):
         """Return buyers."""
-
-        return BuyerProfile.objects.filter(
-            visibility = VisibilityState.OPEN.value
-        )
+        return BuyerProfile.objects.all()
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['retrieve', 'list', 'signup']:
+        if self.action in ['retrieve', 'list']:
             permissions = [AllowAny]
         else:
             permissions = [IsAuthenticated, IsBuyerMemberWithEditPermission]
@@ -71,20 +62,22 @@ class BuyerViewSet(mixins.RetrieveModelMixin,
 
     def get_data_owner_company(self):
         """Return the company owner of the data (The company of the buyer)"""
-        return self.get_object().company
+        print(self.action)
+
+        if self.action in ['activate']:
+            self.company = get_object_or_404(
+                Company, accountname = self.kwargs['accountname']
+            )
+            return self.company
+        else:
+            return self.get_object().company
  
 
     def get_object(self):
         return get_object_or_404(
             BuyerProfile,
-            company__accountname = self.kwargs['accountname'],
-            visibility = VisibilityState.OPEN.value
+            company__accountname = self.kwargs['accountname']
         )
-
-    def perform_destroy(self, instance):
-        """Disable membership."""
-        instance.visibility = VisibilityState.DELETE.value
-        instance.save()
 
     @swagger_auto_schema( operation_id = "Partial update a buyer", tags = ["Buyers"], request_body = BuyerProfileModelSerializer,
         responses = { 200: BuyerProfileModelSerializer, 404: openapi.Response("Not Found"),
@@ -115,27 +108,31 @@ class BuyerViewSet(mixins.RetrieveModelMixin,
         
         return Response(data, status = data_status)
 
-    
-
-    @swagger_auto_schema( operation_id = "Signup a Buyer", tags = ["Authentication"], request_body = SignupBuyerSerializer,
-        responses = { 201: openapi.Response( "Company created", SignupDocumentationResponseSerializer), 
-            400: openapi.Response("Bad request", examples = {"application/json": [
-                {"password_confirmation": ["This field is required"], "name": ["There is alredy a company with this name"],
-                "non_field_errors": ["las contraseñas no concuerdan"] }
-            ]})
-        }, security = [{ "Anonymous": [] }]
+    @swagger_auto_schema( tags = ["Companies", "Buyers"], request_body = serializers.Serializer(),
+        manual_parameters = [
+            openapi.Parameter(name = "accountname", in_ = openapi.IN_PATH, type = "String",
+                description = "accountname of the company that is going to be extended as a buyer.")
+        ],
+        responses = { 201: ActivateBuyerSerializer }, security = [{ "api-key": [] }]
     )
-    @action(detail = False, methods = ['post'])
-    def signup(self, request):
-        """Endpoint for signup a buyer company with user access in the system.
-        It returns the company created and the access_token to access inmediately."""
-        serializer = SignupBuyerSerializer( data = request.data )
-        serializer.is_valid( raise_exception = True )   
-        company, token = serializer.save()
+    @action(detail = True, methods = ['post'])
+    def activate(self, request, accountname):
+        """Activate as a buyer\n
+        Endpoint to activate a company as a buyer.\n
+        Recieves the accountname of the company by param and extends the
+        company account to perform buyer actions in the platform.
+        """
+        if self.company is None:
+            self.company = get_object_or_404(
+                Company, accountname = accountname
+            )
 
-        data = {
-            'company': CompanyModelSerializer( company ).data,
-            'access_token': token
-        }
+        activate_serializer = ActivateBuyerSerializer( 
+            data = {}, context = { 'company': self.company } 
+        )
+        activate_serializer.is_valid(raise_exception = True)
 
-        return Response( data, status = status.HTTP_201_CREATED )
+        buyer = activate_serializer.save()
+        buyer_serializer = ActivateBuyerSerializer( buyer )
+
+        return Response( buyer_serializer.data, status = status.HTTP_201_CREATED )

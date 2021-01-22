@@ -1,15 +1,18 @@
 # Models products
 
-# Constants
-from companies.constants import VisibilityState
+# Business Network API
+from business_network_API.models import VisibilityModel
 
 # Django
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 
 # Models
 from suppliers.models import Certificate, SupplierProfile
 from multimedia.models import Image
+
+# Signals
+from .. import signals
 
 
 class Currency(models.Model):
@@ -39,7 +42,7 @@ class Currency(models.Model):
         db_table = 'currency'
 
 
-class Product(models.Model):
+class Product(VisibilityModel):
     """
     Product that a supplier offers in the platform.
     It is published in its profile and in the market
@@ -116,23 +119,13 @@ class Product(models.Model):
         help_text = _('Secondary images that shows the details of the product.')
     )
 
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
-    )
-
     class Meta:
         db_table = 'product'
 
+    @transaction.atomic
     def delete(self):
-        self.visibility = VisibilityState.DELETED.value
-        self.save()
-
-    def hard_delete(self):
         super(Product, self).delete()
+        signals.post_product_delete.send(sender=Product, instance = self)
 
 
 class ProductCertificate(models.Model):

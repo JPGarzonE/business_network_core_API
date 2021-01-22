@@ -60,9 +60,6 @@ class CreateRelationshipSerializer(serializers.Serializer):
         """Create new user relationship."""
         requester = self.context['requester']
         addressed = self.context['addressed']
-        
-        if not requester.is_active or not addressed.is_active:
-            raise Exception("Requester and addressed both have to be active users")
 
         type = data.get("type")
 

@@ -74,9 +74,13 @@ class CreateFileSerializer(serializers.Serializer):
     def create(self, data):
         """Create and store a new file"""
 
-        user = self.context['user']
-        file_object = data.get("file")
+        # Define an appropiate folder name
+        request = self.context.get('request')
+        company_accountname = request.auth.payload.get('company_accountname')
+        username = request.user.username
+        folder_name = company_accountname if company_accountname else username
 
+        file_object = data.get("file")
         file_size = file_object.size # size in bytes
 
         file = File.objects.create(
@@ -85,8 +89,8 @@ class CreateFileSerializer(serializers.Serializer):
         )
         file_id = file.id
 
-        bucket_directory = '{username}/{file_object_id}/'.format( 
-            username = user.username,
+        bucket_directory = '{folder_name}/{file_object_id}/'.format( 
+            folder_name = folder_name,
             file_object_id = file_id
         )
 
@@ -115,8 +119,8 @@ class CreateFileSerializer(serializers.Serializer):
 
             return file
         else:
-            raise Exception("File {filename} alredy exists for the user {username} in bucket {bucket_name}".format(
+            raise Exception("File {filename} alredy exists in the folder '{folder_name}' in bucket {bucket_name}".format(
                 filename = file_object.name,
-                username = user.username,
+                folder_name = folder_name,
                 bucket_name = file_storage.bucket_name
             ))

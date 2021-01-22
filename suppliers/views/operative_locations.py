@@ -1,8 +1,5 @@
 # Views operative_locations
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -55,8 +52,7 @@ class SupplierLocationViewSet(mixins.ListModelMixin,
         """Verifiy that the supplier exists"""
         accountname = kwargs['accountname']
         self.supplier = get_object_or_404(
-            SupplierProfile, company__accountname = accountname,
-            visibility = VisibilityState.OPEN.value
+            SupplierProfile, company__accountname = accountname
         )
 
         return super(SupplierLocationViewSet, self).dispatch(request, *args, **kwargs)
@@ -91,13 +87,11 @@ class SupplierLocationViewSet(mixins.ListModelMixin,
             principal_location_id = self.supplier.principal_location.id if self.supplier.principal_location else None
 
             return SupplierLocation.objects.filter(
-                supplier = self.supplier,
-                visibility = VisibilityState.OPEN.value
+                supplier = self.supplier
             ).exclude( id = principal_location_id )
         else:
             return SupplierLocation.objects.filter(
-                supplier = self.supplier,
-                visibility = VisibilityState.OPEN.value
+                supplier = self.supplier
             )
 
 
@@ -130,17 +124,10 @@ class SupplierLocationViewSet(mixins.ListModelMixin,
         location = get_object_or_404(
             SupplierLocation,
             id = self.kwargs['pk'],
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return location
-
-    def perform_destroy(self, instance):
-        """Disable location."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
-
 
     @swagger_auto_schema( operation_id = "Partial update operative location", tags = ["Supplier Locations"], 
         request_body = SupplierLocationModelSerializer, security = [{ "api-key": [] }],

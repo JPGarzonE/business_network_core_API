@@ -1,10 +1,10 @@
 # Models locations
 
-# constants
-from companies.constants import VisibilityState
+# Business Network API
+from business_network_API.models import VisibilityModel
 
 # Django
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 
 # Models
@@ -12,7 +12,7 @@ from suppliers.models import SupplierProfile
 from multimedia.models import Image
 
 
-class SupplierLocation(models.Model):
+class SupplierLocation(VisibilityModel):
     """Location where a supplier operates."""
 
     id = models.BigAutoField(primary_key=True)
@@ -47,19 +47,26 @@ class SupplierLocation(models.Model):
     
     supplier = models.ForeignKey(SupplierProfile, models.PROTECT)
 
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
-    )
-
     class Meta:
         db_table = 'supplier_location'
 
+    @transaction.atomic
+    def delete(self):
+        """
+        Validate if it's the principal location of a supplier before 
+        soft deleting to manage additional deleting operations.
+        """
 
-class SupplierSaleLocation(models.Model):
+        supplier = self.supplier
+
+        if self == supplier.principal_location:
+            supplier.principal_location = None
+            supplier.save()
+
+        super().delete()
+
+
+class SupplierSaleLocation(VisibilityModel):
     """Location where a supplier sales."""
 
     id = models.BigAutoField(primary_key=True)
@@ -71,14 +78,6 @@ class SupplierSaleLocation(models.Model):
     region = models.CharField(max_length=45, blank=True, null=True)
     
     supplier = models.ForeignKey(SupplierProfile, models.PROTECT)
-
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
-    )
 
     class Meta:
         db_table = 'supplier_sale_location'

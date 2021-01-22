@@ -1,4 +1,4 @@
-"""Market showcases serializer."""
+# Serializer market showcases
 
 # Django
 from django.db import transaction

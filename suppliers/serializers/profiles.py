@@ -1,8 +1,5 @@
 # Serializers profiles
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django rest framework
 from rest_framework import serializers
 
@@ -139,7 +136,7 @@ class SupplierProfileSerializer(serializers.Serializer):
     def get_principal_location(self, instance):
         supplier = instance.get("supplier")
 
-        if supplier.principal_location and supplier.principal_location.visibility == VisibilityState.OPEN.value:
+        if supplier.principal_location:
             return SupplierLocationNestedModelSerializer(
                 supplier.principal_location
             ).data
@@ -150,7 +147,7 @@ class SupplierProfileSerializer(serializers.Serializer):
         supplier = instance.get("supplier")
 
         supplier_sale_locations = SupplierSaleLocation.objects.filter(
-            supplier = supplier, visibility = VisibilityState.OPEN.value
+            supplier = supplier
         )
         return SupplierSaleLocationModelSerializer(supplier_sale_locations, many = True).data
 
@@ -158,7 +155,7 @@ class SupplierProfileSerializer(serializers.Serializer):
         supplier = instance.get("supplier")
 
         supplier_products = Product.objects.filter(
-            supplier = supplier, visibility = VisibilityState.OPEN.value
+            supplier = supplier
         )[:6]
         return ProductOverviewModelSerializer(supplier_products, many = True).data
 
@@ -166,7 +163,7 @@ class SupplierProfileSerializer(serializers.Serializer):
         supplier = instance.get("supplier")
 
         supplier_certificates = SupplierCertificate.objects.filter(
-            supplier = supplier, visibility = VisibilityState.OPEN.value
+            supplier = supplier
         )
         return SupplierCertificateModelSerializer(supplier_certificates, many = True).data
 
@@ -175,8 +172,7 @@ class SupplierProfileSerializer(serializers.Serializer):
         company = supplier.company
 
         company_unregistered_relationships = UnregisteredRelationship.objects.filter(
-            requester = company,
-            visibility = VisibilityState.OPEN.value
+            requester = company
         )
         return UnregisteredRelationshipModelSerializer(company_unregistered_relationships,
             many = True).data

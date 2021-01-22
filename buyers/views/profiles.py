@@ -1,8 +1,5 @@
 # Views profiles
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.http import Http404
 from django.db import transaction
@@ -39,8 +36,7 @@ class BuyerProfileView(APIView):
         accountname = kwargs['accountname']
         self.buyer = get_object_or_404(
             BuyerProfile, 
-            company__accountname = accountname,
-            visibility = VisibilityState.OPEN.value
+            company__accountname = accountname
         )
 
         return super(BuyerProfileView, self).dispatch(request, *args, **kwargs)

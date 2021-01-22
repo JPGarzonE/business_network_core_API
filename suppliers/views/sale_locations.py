@@ -1,8 +1,5 @@
 # View sale_locations
 
-# Constant
-from companies.constants import VisibilityState
-
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -64,8 +61,7 @@ class SupplierSaleLocationViewSet(mixins.ListModelMixin,
         """Verifiy that the supplier exists"""
         accountname = kwargs['accountname']
         self.supplier = get_object_or_404(
-            SupplierProfile, company__accountname = accountname,
-            visibility = VisibilityState.OPEN.value
+            SupplierProfile, company__accountname = accountname
         )
 
         return super(SupplierSaleLocationViewSet, self).dispatch(request, *args, **kwargs)
@@ -92,8 +88,7 @@ class SupplierSaleLocationViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         """Return supplier locations"""
         return SupplierSaleLocation.objects.filter(
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
     def get_object(self):
@@ -101,17 +96,10 @@ class SupplierSaleLocationViewSet(mixins.ListModelMixin,
         location = get_object_or_404(
             SupplierSaleLocation,
             id = self.kwargs['pk'],
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return location
-
-    def perform_destroy(self, instance):
-        """Disable location."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
-
 
     @swagger_auto_schema( operation_id = "Create sale location", tags = ["Supplier Locations"],
         request_body = HandleSupplierSaleLocationSerializer, security = [{ "api-key": [] }],
@@ -128,7 +116,7 @@ class SupplierSaleLocationViewSet(mixins.ListModelMixin,
         try:
             location_serializer = HandleSupplierSaleLocationSerializer(
                 data = request.data,
-                context = {'suplier': self.supplier}
+                context = {'supplier': self.supplier}
             )
             location_serializer.is_valid(raise_exception = True)
             location = location_serializer.save()

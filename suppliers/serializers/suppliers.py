@@ -1,8 +1,5 @@
 # Serializers suppliers
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django-rest serializers
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -19,16 +16,51 @@ from django.utils.translation import ugettext_lazy as _
 from companies.serializers.verifications import send_company_verification_notification_email
 
 # Models
-from companies.models import User, Company, CompanyMember, CompanyVerification, CompanyVerificationFile
+from companies.models import Company, CompanyMember, CompanyVerification, CompanyVerificationFile
 from ..models import SupplierProfile, SupplierLocation, SupplierSaleLocation
 from multimedia.models import File
 
 # Serializers
+from companies.serializers import CompanyModelSerializer
 from .locations import (
     SupplierLocationNestedModelSerializer, SupplierSaleLocationModelSerializer, 
     UpdateSupplierSummarySaleLocationSerializer, HandleSupplierSaleLocationSerializer,
     HandleSupplierLocationSerializer
 )
+
+
+class ActivateSupplierSerializer(serializers.ModelSerializer):
+    """
+    Serializer to take a company and extends 
+    its capabilites for being a supplier.
+    """
+
+    company = CompanyModelSerializer( required = False )
+
+    class Meta:
+        model = SupplierProfile
+        
+        fields = ('id', 'company', 'display_name', 'description',
+            'industry', 'contact_area_code', 'contact_phone', 
+            'contact_email', 'activation_date' , 'principal_location'
+        )
+
+        read_only_fields = ('id', 'company', 'display_name', 'description',
+            'industry', 'contact_area_code', 'contact_phone', 
+            'contact_email', 'activation_date' , 'principal_location'
+        )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        company = self.context.pop('company')
+
+        company.is_supplier = True
+        company.save()
+
+        return SupplierProfile.objects.create(
+            company = company,
+            **validated_data
+        )
 
 
 class SupplierProfileModelSerializer(serializers.ModelSerializer):
@@ -49,102 +81,6 @@ class SupplierProfileModelSerializer(serializers.ModelSerializer):
             'activation_date' , 
             'principal_location'
         )
-
-
-class SignupSupplierSerializer(serializers.Serializer):
-    """Serializer for the signup of a supplier."""
-
-    email = serializers.EmailField(
-        validators = [ 
-            UniqueValidator( queryset = User.objects.all(), message = "There is alredy a user with this email" )
-        ]
-    )
-
-    full_name = serializers.CharField(
-        max_length = 50, 
-        help_text = _("Complete real name of the user")
-    )
-
-    name = serializers.CharField(
-        max_length = 60,
-        help_text = _("Real name of the company"),
-        validators=[
-            UniqueValidator(queryset=Company.objects.all(), message = "There is alredy a company with this name")
-        ]
-    )
-
-    legal_identifier = serializers.CharField(
-        max_length = 11,
-        validators = [
-            RegexValidator(
-                regex = r'(\d{9,9}((.)\d)?)',
-                message = "El nit debe estar acorde al formato de la registraduria"
-            ),
-            UniqueValidator(queryset=Company.objects.all(), message = "There is alredy a company with this nit")
-        ]
-    )
-
-    industry = serializers.CharField(max_length=60)
-
-    comercial_certificate_id = serializers.IntegerField(required = False)
-
-    password = serializers.CharField(min_length=8, max_length=64)
-
-    password_confirmation = serializers.CharField(min_length=8, max_length=64)
-
-    def validate(self, data):
-        """Validate that passwords match"""
-        passw = data['password']
-        passw_conf = data['password_confirmation']
-
-        if passw != passw_conf:
-            raise serializers.ValidationError("Las contraseñas no coinciden")
-        
-        password_validation.validate_password( passw )
-        
-        return data
-
-    @transaction.atomic
-    def create(self, data):
-        """Handle supplier profile creation."""
-        data.pop('password_confirmation')
-
-        certificate = None
-        if data.get('comercial_certificate_id'):
-            certificate_id = data.pop("comercial_certificate_id")
-            certificate = File.objects.get( id = certificate_id )
-
-            if certificate:
-                verification = CompanyVerification.objects.create( 
-                    state = CompanyVerification.States.INPROGRESS.value )
-
-                company_verification_file = CompanyVerificationFile.objects.create(
-                    company_verification = verification, file = certificate )
-        else:
-            verification = CompanyVerification.objects.create( 
-                state = CompanyVerification.States.NONE.value )
-
-        user = User.objects.create_user(
-            email = data.get('email'),
-            full_name = data.get('full_name'),
-            password = data.get('password')
-        )
-
-        company = Company.objects.create(
-            creator_user = user,
-            name = data.get('name'),
-            legal_identifier = data.get('legal_identifier'), 
-            verification = verification, is_supplier = True
-        )
-
-        SupplierProfile.objects.create(company = company, 
-            display_name = company.name, industry = data.get('industry'))
-
-        if certificate is not None and company_verification_file is not None:
-            send_company_verification_notification_email(user, company, [certificate.path])
-
-        token, created = Token.objects.get_or_create( user = user )
-        return company, token.key
 
 
 class ProductSupplierModelSerializer(serializers.ModelSerializer):
@@ -221,7 +157,8 @@ class SupplierSummarySerializer(serializers.ModelSerializer):
 
     def get_sale_locations(self, instance):
         supplier_sale_locations = SupplierSaleLocation.objects.filter( 
-            supplier = instance, visibility = VisibilityState.OPEN.value)
+            supplier = instance
+        )
         
         return SupplierSaleLocationModelSerializer(
             supplier_sale_locations,

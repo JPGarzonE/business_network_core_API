@@ -1,4 +1,4 @@
-"""Resotres views"""
+# Views restores
 
 # DRF
 from rest_framework import status
@@ -12,7 +12,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 # Serializers
-from ..serializers import RestorePasswordSerializer
+from ..seralizers import RestorePasswordSerializer
 
 
 class RestorePasswordAPIView(APIView):

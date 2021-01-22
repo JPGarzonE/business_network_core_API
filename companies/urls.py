@@ -8,30 +8,26 @@ from .views import (
     SentRelationshipRequestViewSet,
     RecievedRelationshipRequestViewSet,
     RelationshipRequestViewSet,
-    UserIdentityAPIView,
-    UserViewSet, 
     CompanyVerificationAPIView,
     CompanyVerificationTokenAPIView,
-    RestorePasswordAPIView,
     CompanyViewSet,
     UnregisteredCompanyViewSet,
     UnregisteredRelationshipViewSet
 )
 
 router = routers.DefaultRouter()
-router.register('users', UserViewSet)
 router.register(
     'companies', 
     CompanyViewSet,
     basename = 'companies'
 )
 router.register(
-    'companies/unregistered',
+    'unregistered-companies',
     UnregisteredCompanyViewSet,
     basename = 'unregistered_companies'
 )
 router.register(
-    'companies/(?P<requester_company_accountname>[\w.]+)/relationships/unregistered',
+    'companies/(?P<requester_company_accountname>[\w.]+)/unregistered-relationships',
     UnregisteredRelationshipViewSet,
     basename = 'unregistered_relationships'
 )
@@ -57,18 +53,10 @@ router.register(
 )
 
 urlpatterns = [
-    path('me/', UserIdentityAPIView.as_view(), name = 'user_me'),
     path('companies/<accountname>/verification/', CompanyVerificationAPIView.as_view(), name = 'company_verification'),
-    path('me/restores/password/', RestorePasswordAPIView.as_view(), name = 'Restore password'),
 
     path('companies/verification/verify/', VerifyCompanyAPIView.as_view(), name = 'verify_company'),
     path('companies/<accountname>/verification/token/', CompanyVerificationTokenAPIView.as_view(), name="company_verification_token"),
 
     path('', include(router.urls)),
-
-    path(
-        'api-auth/', 
-        include('rest_framework.urls', namespace = 'rest_framework'),
-    ),
-
 ]

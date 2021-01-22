@@ -1,4 +1,4 @@
-"""Market showcases views."""
+# Views market showcase
 
 # Django
 from django.db import transaction

@@ -1,7 +1,7 @@
 # Models certificates
 
-# Constants
-from companies.constants import VisibilityState
+# Business Network API
+from business_network_API.models import VisibilityModel
 
 # Django
 from django.db import models
@@ -36,7 +36,7 @@ class Certificate(models.Model):
         db_table = 'certificate'
 
 
-class SupplierCertificate(models.Model):
+class SupplierCertificate(VisibilityModel):
     """
     Certificate that has a supplier.
     """
@@ -46,14 +46,6 @@ class SupplierCertificate(models.Model):
     supplier = models.ForeignKey(SupplierProfile, on_delete=models.PROTECT)
     
     certificate = models.ForeignKey(Certificate, on_delete=models.PROTECT)
-
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
-    )
 
     class Meta:
         db_table = 'supplier_certificate'

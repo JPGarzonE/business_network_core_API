@@ -161,13 +161,13 @@ class HandleSupplierLocationSerializer(serializers.ModelSerializer):
     )
 
     latitude = serializers.DecimalField(
-        max_digits=3, 
+        max_digits=9, 
         decimal_places=6,
         required = False
     )
 
     longitude = serializers.DecimalField(
-        max_digits=3, 
+        max_digits=9, 
         decimal_places=6,
         required = False
     )

@@ -1,5 +1,8 @@
 # Models users
 
+# Companies Models
+from companies.models import CompanyMember
+
 # Django
 from django.db import models
 from django.contrib.auth.models import BaseUserManager  
@@ -167,7 +170,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         if self.pk:
             user_companies = CompanyMember.objects.filter(
-                user = self)
+                user = self
+            )
 
             for membership in user_companies:
                 membership.user_email = self.email
@@ -181,64 +185,38 @@ class User(AbstractBaseUser, PermissionsMixin):
         super().clean()
         self.email = self.__class__.objects.normalize_email(self.email)
 
-    def get_full_name(self):
-        return self.email
+    def get_memberships(self):
+        """Obtain all the memberships of the instance user."""
 
-    def get_short_name(self):
-        return self.email
+        return CompanyMember.objects.filter(
+            user = self
+        )
+
+    def is_member(self, company_accountname):
+        """Verify if the user instance is member of 
+        the company with the accountname by param."""
+
+        return CompanyMember.objects.filter(
+            user = self,
+            company_accountname = company_accountname
+        ).exists()
+
+    def get_default_membership(self):
+        """Obtain the default membership of the instance user."""
+
+        if hasattr(self, 'default_membership'):
+            return self.default_membership
+        else:
+            memberships = self.get_memberships()
+            self.default_membership = memberships[0] if len(memberships) > 0 else None
+
+            return self.default_membership
+
+    def set_default_membership(self, default_membership):
+        """Set the default membership of the instance user."""
+
+        self.default_membership = default_membership
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
-
-
-class CompanyMember(models.Model):
-    """
-    User member of a company. This user has access to 
-    the company account according the assigned permissions.
-    """
-
-    id = models.BigAutoField(primary_key=True)
-
-    company = models.ForeignKey(
-        'Company', verbose_name = _('company account'), on_delete = models.PROTECT,
-        help_text = _('Company that is accesible for its members (user).')
-    )
-
-    user = models.ForeignKey(
-        User, verbose_name = _('company employee'), on_delete = models.PROTECT,
-        help_text = _('User that has access to the company account')
-    )
-
-    number_of_logins_in_supplier_profile = models.PositiveIntegerField( default = 0 )
-
-    number_of_logins_in_buyer_profile = models.PositiveIntegerField( default = 0 )
-
-    company_accountname = models.CharField(
-        max_length = 60, null = False, unique = True,
-        help_text = _("Attribute accountname of the company model. Denormalized for fast access.")
-    )
-    
-    company_name = models.CharField(
-        max_length=60, null = False, unique = True,
-        help_text = _("Attribute name of the company model. Denormalized for fast access.")
-    )
-
-    user_email = models.EmailField(
-        null = False, unique=True,
-        help_text = _("Attribute email of the user model. Denormalized for fast access.")
-    )
-
-    user_username = models.CharField(
-        max_length = 60, null = False, unique = True,
-        help_text = _("Attribute username of the user model. Denormalized for fast access."),
-    )
-
-    user_full_name = models.CharField(
-        max_length=50,
-        help_text = _("Attribute full_name of the user model. Denormalized for fast access.")
-    )
-
-    class Meta:
-        db_table = 'company_member'
-        unique_together = (('company', 'user'),)

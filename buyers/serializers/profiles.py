@@ -1,8 +1,5 @@
 # Serializer profiles
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django rest framework
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -10,7 +7,7 @@ from django.core.validators import RegexValidator
 
 # Models
 from ..models import BuyerProfile
-from companies.models import User, Company
+from companies.models import Company
 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
@@ -42,4 +39,3 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
             'contact_area_code',
             'contact_phone'
         )
-

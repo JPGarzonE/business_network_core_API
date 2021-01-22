@@ -20,6 +20,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from ..permissions import IsCompanyMemberWithEditPermission, IsCompanyMemberWithAdminPermission
 
 # Models
+from multimedia.models import File
 from ..models import Company
 
 # Serializer
@@ -72,20 +73,25 @@ class CompanyVerificationAPIView(APIView):
         """Upload Company Verification Certificates\n
             Endpoint to upload the verification certificates that are required for verify a company.
         """
-        instance = self.get_object(request)
+        try:
+            instance = self.get_object(request)
 
-        vertification_serializer = HandleCompanyVerificationSerializer(
-            instance = instance,
-            data = request.data,
-            context = {'user': request.user, 'company': self.company},
-            partial = True
-        )
+            vertification_serializer = HandleCompanyVerificationSerializer(
+                instance = instance,
+                data = request.data,
+                context = {'user': request.user, 'company': self.company},
+                partial = True
+            )
 
-        vertification_serializer.is_valid(raise_exception = True)
-        verification = vertification_serializer.save()
+            vertification_serializer.is_valid(raise_exception = True)
+            verification = vertification_serializer.save()
 
-        data = CompanyVerificationModelSerializer( verification ).data
-        data_status = status.HTTP_200_OK
+            data = CompanyVerificationModelSerializer( verification ).data
+            data_status = status.HTTP_200_OK
+
+        except File.DoesNotExist as e:
+            data = {"detail": str(e)}
+            data_status = status.HTTP_400_BAD_REQUEST
 
         return Response( data, data_status )
 

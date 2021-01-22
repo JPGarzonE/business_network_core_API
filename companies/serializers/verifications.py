@@ -9,9 +9,13 @@ from django.utils import timezone
 
 # Django rest framework
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
+
+# JWT
+import jwt
 
 # Models
-from companies.models import Company, CompanyVerification, CompanyVerificationFile
+from ..models import Company, CompanyVerification, CompanyVerificationFile
 from multimedia.models import File
 
 # Serializers
@@ -19,41 +23,10 @@ from multimedia.serializers.files import FileModelSerializer
 
 # Utilities
 from datetime import timedelta
-import jwt
 
-
-# User verification payload type
-USER_VERIFICATION_PAYLOAD_TYPE = 'user_email_confirmation'
 
 # Company verification payload type
 COMPANY_VERIFICATION_PAYLOAD_TYPE = 'existence_company_confirmation'
-
-
-def generate_user_verification_token(user):
-    """Create JWT token that the user can use to verify its account."""
-    payload = {
-        'user': user.username,
-        'type': USER_VERIFICATION_PAYLOAD_TYPE
-    }
-    token = jwt.encode(payload, settings.SECRET_KEY, algorithm = 'HS256')
-    return token.decode()
-
-
-def validate_user_verification_token(token):
-    """Recieves the verification JWT token of a company, 
-    validate if its correct and returns the payload."""
-
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms = 'HS256')
-    except jwt.ExpiredSignatureError:
-        raise serializers.ValidationError('Verification link has expired')
-    except jwt.PyJWTError:
-        raise serializers.ValidationError('Invalid token')
-
-    if payload['type'] != USER_VERIFICATION_PAYLOAD_TYPE:
-        raise serializers.ValidationError('Invalid token')
-
-    return payload
 
 
 def generate_company_verification_token(company):
@@ -165,7 +138,11 @@ class HandleCompanyVerificationSerializer(serializers.ModelSerializer):
             file_objects = []
 
             for file_id in files:
-                file_object = File.objects.get( id = file_id )
+                try:
+                    file_object = File.objects.get( id = file_id )
+                except File.DoesNotExist:
+                    raise File.DoesNotExist("Theres no file with the id = {} provided in files.".format(file_id))
+
                 file_objects.append(file_object)
 
                 CompanyVerificationFile.objects.create(
@@ -202,7 +179,7 @@ class VerifyCompanySerializer(serializers.Serializer):
     def save(self):
         """Update company's verified status"""
         payload = self.context['payload']
-        company = Company.objects.get(accountname = payload['company'])
+        company = get_object_or_404(Company, accountname = payload['company'])
         company.is_verified = True
         company.save()
 

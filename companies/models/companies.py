@@ -1,7 +1,7 @@
 # Models companies
 
-# Constants
-from companies.constants import VisibilityState
+# Business Network API
+from business_network_API.models import VisibilityManager, VisibilityModel
 
 # Django
 from django.db import models
@@ -18,13 +18,13 @@ from multimedia.models import Image
 from enum import Enum
 
 
-class CompanyManager(models.Manager):
+class CompanyManager(VisibilityManager):
     """
     A custom company model manager to deal with the registration
     of a new company including user memberships logic.
     """
 
-    def create(self, creator_user, **company_data):
+    def create(self, creator_user, verification = None, **company_data):
         """
         Takes the creator user of the company previously 
         created in the db and builds a relation with the 
@@ -34,9 +34,15 @@ class CompanyManager(models.Manager):
             company_data['name']
         )
 
-        company = super().create(**company_data)
+        if verification is None:
+            verification = CompanyVerification.objects.create() # Default verification
 
-        member = CompanyMember.objects.create(
+        company = super().create(
+            verification = verification, 
+            **company_data
+        )
+
+        creator_membership = CompanyMember.objects.create(
             company = company, 
             user = creator_user, 
             company_accountname = company.accountname,
@@ -46,7 +52,7 @@ class CompanyManager(models.Manager):
             user_full_name = creator_user.full_name
         )
 
-        return company
+        return company, creator_membership
 
     def generate_company_accountname(self, company_name):
         """Recieve the name of the company and generate a valid accountname for it."""
@@ -65,7 +71,7 @@ class CompanyManager(models.Manager):
         return accountname
 
 
-class Company(models.Model):
+class Company(VisibilityModel):
     """
     Company that have an account on the platform. 
     The account is of multiuser access.
@@ -101,14 +107,6 @@ class Company(models.Model):
     is_verified = models.BooleanField(
         _('verified'), default = False,
         help_text = _('Set to true when the company existence and legality is verified')
-    )
-
-    visibility = models.CharField(
-        max_length = 20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null = False,
-        blank = False
     )
 
     verification = models.OneToOneField(CompanyVerification, on_delete = models.CASCADE)
@@ -154,15 +152,25 @@ class UnregisteredCompany(models.Model):
     
     name = models.CharField(max_length=60)
     
-    legal_identifier = models.CharField(unique=True, max_length = 30)
+    legal_identifier = models.CharField(
+        unique=True, max_length = 30, blank=True, null=True
+    )
 
-    industry = models.CharField(max_length=60)
+    industry = models.CharField(
+        max_length=60, blank=True, null=True
+    )
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(
+        unique=True, blank=True, null=True
+    )
 
-    country = models.CharField(max_length=50)
+    country = models.CharField(
+        max_length=50, blank=True, null=True
+    )
 
-    city = models.CharField(max_length=50)
+    city = models.CharField(
+        max_length=50, blank=True, null=True
+    )
 
     is_contactable = models.BooleanField(
         _('contactable'),

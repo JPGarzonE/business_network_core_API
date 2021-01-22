@@ -79,7 +79,12 @@ class CreateImageSerializer(serializers.Serializer):
     def create(self, data):
         """Create and store a new image"""
 
-        user = self.context['user']
+        # Define an appropiate folder name
+        request = self.context.get('request')
+        company_accountname = request.auth.payload.get('company_accountname')
+        username = request.user.username
+        folder_name = company_accountname if company_accountname else username
+
         image_object = data.get("image")
         
         image_size = image_object.size # size in bytes
@@ -96,8 +101,8 @@ class CreateImageSerializer(serializers.Serializer):
         )
         image_id = image.id
 
-        bucket_directory = '{username}/{image_object_id}/'.format( 
-            username = user.username,
+        bucket_directory = '{folder_name}/{image_object_id}/'.format( 
+            folder_name = folder_name,
             image_object_id = image_id
         )
         

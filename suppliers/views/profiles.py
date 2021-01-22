@@ -1,8 +1,5 @@
 # Views profiles
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.http import Http404
 
@@ -58,6 +55,5 @@ class SupplierProfileView(APIView):
     def get_object(self, accountname):
         return get_object_or_404(
             SupplierProfile,
-            company__accountname = accountname,
-            visibility = VisibilityState.OPEN.value
+            company__accountname = accountname
         )

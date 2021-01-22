@@ -7,13 +7,11 @@ from django.contrib.auth.models import AnonymousUser
 from rest_framework.permissions import BasePermission
 
 # Models for query the different access
-from .models.users import CompanyMember
+from .models.members import CompanyMember
 
 
 class IsCompanyMemberWithEditPermission(BasePermission):
     """Allow access only to users that are members of the company"""
-
-    message = 'You are not a member of the company owner of the data.'
 
     def has_permission(self, request, view):
         """Let object permission grant access."""
@@ -24,8 +22,13 @@ class IsCompanyMemberWithEditPermission(BasePermission):
         """Check if user is a member of the company"""
         if type(request.user) is AnonymousUser:
             return False
-        
+
         company = view.get_data_owner_company()
+        token_company_accountname = request.auth.payload.get('company_accountname')
+
+        if company.accountname != token_company_accountname:
+            self.message = 'This auth token is not valid for the company owner of the data.'
+            return False
 
         try:
             CompanyMember.objects.get(
@@ -35,14 +38,13 @@ class IsCompanyMemberWithEditPermission(BasePermission):
 
             return True
         except CompanyMember.DoesNotExist:
+            self.message = 'You dont have edit permissions in the company owner of the data.'
             return False
 
 
 class IsCompanyMemberWithAdminPermission(BasePermission):
     """Allow access only to users that are members of the company"""
 
-    message = 'You are not a member of the company owner of the data.'
-
     def has_permission(self, request, view):
         """Let object permission grant access."""
 
@@ -54,6 +56,11 @@ class IsCompanyMemberWithAdminPermission(BasePermission):
             return False
 
         company = view.get_data_owner_company()
+        token_company_accountname = request.auth.payload.get('company_accountname')
+
+        if company.accountname != token_company_accountname:
+            self.message = 'This auth token is not valid for the company owner of the data.'
+            return False
 
         try:
             CompanyMember.objects.get(
@@ -63,13 +70,14 @@ class IsCompanyMemberWithAdminPermission(BasePermission):
 
             return True
         except CompanyMember.DoesNotExist:
+            self.message = 'You dont have edit permissions in the company owner of the data.'
             return False
 
 
 class IsCompanyMember(BasePermission):
     """Allow access only to users that are members of the company"""
 
-    message = 'You are not a member of the company owner of the data.'
+    message = 'You dont have access to the company owner of the data with this authorization.'
 
     def has_permission(self, request, view):
         """Let object permission grant access."""
@@ -82,6 +90,11 @@ class IsCompanyMember(BasePermission):
             return False
 
         company = view.get_data_owner_company()
+        token_company_accountname = request.auth.payload.get('company_accountname')
+
+        if company.accountname != token_company_accountname:
+            self.message = 'This auth token is not valid for the company owner of the data.'
+            return False
 
         try:
             CompanyMember.objects.get(
@@ -91,6 +104,7 @@ class IsCompanyMember(BasePermission):
 
             return True
         except CompanyMember.DoesNotExist:
+            self.message = 'You dont have edit permissions in the company owner of the data.'
             return False
 
 

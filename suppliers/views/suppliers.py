@@ -1,13 +1,10 @@
 # Views suppliers
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.utils.decorators import method_decorator
 
 # Django-rest framework
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -17,6 +14,7 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
 # Models
+from companies.models import Company
 from ..models import SupplierProfile
  
 # Permissions
@@ -25,13 +23,12 @@ from ..permissions import IsSupplierMemberWithEditPermission
  
 # Serializers
 from ..serializers import (
+    ActivateSupplierSerializer,
     SupplierProfileModelSerializer, 
     UpdateSupplierSerializer, 
     SupplierSummarySerializer, 
-    UpdateSupplierSummarySerializer,
-    SignupSupplierSerializer
+    UpdateSupplierSummarySerializer
 )
-from companies.serializers import CompanyModelSerializer, SignupDocumentationResponseSerializer
 
 
 @method_decorator(name = 'list', decorator = swagger_auto_schema( operation_id = "List suppliers", tags = ["Suppliers"],
@@ -53,18 +50,16 @@ class SupplierViewSet(mixins.RetrieveModelMixin,
 
     serializer_class = SupplierProfileModelSerializer
     lookup_field = 'accountname'
-    lookup_value_regex = '[\w.]+'
+    lookup_value_regex = "[\\w.]+"
 
     def get_queryset(self):
         """Return suppliers."""
 
-        return SupplierProfile.objects.filter(
-            visibility = VisibilityState.OPEN.value
-        )
+        return SupplierProfile.objects.all()
 
     def get_permissions(self):
         """Assign permission based on action"""
-        if self.action in ['retrieve', 'list', 'signup']:
+        if self.action in ['retrieve', 'list']:
             permissions = [AllowAny]
         else:
             permissions = [IsAuthenticated, IsSupplierMemberWithEditPermission]
@@ -74,20 +69,22 @@ class SupplierViewSet(mixins.RetrieveModelMixin,
 
     def get_data_owner_company(self):
         """Return the company owner of the data (The company of the supplier)"""
-        return self.get_object().company
+        print(self.action)
+
+        if self.action in ['activate']:
+            self.company = get_object_or_404(
+                Company, accountname = self.kwargs['accountname']
+            )
+            return self.company
+        else:
+            return self.get_object().company
  
 
     def get_object(self):
         return get_object_or_404(
             SupplierProfile,
-            company__accountname = self.kwargs['accountname'],
-            visibility = VisibilityState.OPEN.value
+            company__accountname = self.kwargs['accountname']
         )
-
-    def perform_destroy(self, instance):
-        """Disable membership."""
-        instance.visibility = VisibilityState.DELETE.value
-        instance.save()
 
     @swagger_auto_schema( operation_id = "Partial update a supplier", tags = ["Suppliers"], request_body = UpdateSupplierSerializer,
         responses = { 200: SupplierProfileModelSerializer, 404: openapi.Response("Not Found"),
@@ -118,30 +115,35 @@ class SupplierViewSet(mixins.RetrieveModelMixin,
         
         return Response(data, status = data_status)
 
-    
-
-    @swagger_auto_schema( operation_id = "Signup a Supplier", tags = ["Authentication"], request_body = SignupSupplierSerializer,
-        responses = { 201: openapi.Response( "Company created", SignupDocumentationResponseSerializer), 
-            400: openapi.Response("Bad request", examples = {"application/json": [
-                {"password_confirmation": ["This field is required"], "name": ["There is alredy a company with this name"],
-                "non_field_errors": ["las contraseñas no concuerdan"] }
-            ]})
-        }, security = [{ "Anonymous": [] }]
+    @swagger_auto_schema( tags = ["Companies", "Suppliers"], request_body = serializers.Serializer(),
+        manual_parameters = [
+            openapi.Parameter(name = "accountname", in_ = openapi.IN_PATH, type = "String",
+                description = "accountname of the company that is going to be extended as a supplier.")
+        ],
+        responses = { 201: ActivateSupplierSerializer }, security = [{ "api-key": [] }]
     )
-    @action(detail = False, methods = ['post'])
-    def signup(self, request):
-        """Endpoint for signup a supplier company with user access in the system.
-        It returns the company created and the access_token to access inmediately."""
-        serializer = SignupSupplierSerializer( data = request.data )
-        serializer.is_valid( raise_exception = True )   
-        company, token = serializer.save()
+    @action(detail = True, methods = ['post'])
+    def activate(self, request, accountname):
+        """Activate as a supplier\n
+        Endpoint to activate a company as a supplier.\n
+        Recieves the accountname of the company by param and extends the
+        company account to perform supplier actions in the platform.
+        """
+        if self.company is None:
+            self.company = get_object_or_404(
+                Company, accountname = accountname
+            )
 
-        data = {
-            'company': CompanyModelSerializer( company ).data,
-            'access_token': token
-        }
+        activate_serializer = ActivateSupplierSerializer(
+            data = {},
+            context = { 'company': self.company } 
+        )
+        activate_serializer.is_valid(raise_exception = True)
 
-        return Response( data, status = status.HTTP_201_CREATED )
+        supplier = activate_serializer.save()
+        supplier_serializer = ActivateSupplierSerializer( supplier )
+
+        return Response( supplier_serializer.data, status = status.HTTP_201_CREATED )
 
 
 @method_decorator(name = 'retrieve', decorator = swagger_auto_schema( operation_id = "Retrieve a supplier summary", tags = ["Suppliers"],
@@ -180,8 +182,7 @@ class SupplierSummaryViewSet(mixins.RetrieveModelMixin,
     def get_queryset(self):
         accountname = self.kwargs['accountname']
         return get_object_or_404(
-            SupplierProfile, company__accountname = accountname,
-            visibility = VisibilityState.OPEN.value
+            SupplierProfile, company__accountname = accountname
         )
 
     def get_object(self):

@@ -1,7 +1,7 @@
 # Models buyers
 
-# Constants
-from companies.constants import VisibilityState
+# Business Network API
+from business_network_API.models import VisibilityManager, VisibilityModel
 
 # Django
 from django.db import models
@@ -14,7 +14,27 @@ from django.utils import timezone
 from companies.models import Company
 
 
-class BuyerProfile(models.Model):
+class BuyerManager(VisibilityManager):
+    """
+    A custom buyer manager to deal with the denormalization
+    of some compny fields in the creation of a buyer.
+    """
+
+    def create(self, company, **buyer_data):
+
+        if buyer_data.get('display_name') is None:
+            buyer_data['display_name'] = company.name
+
+        if buyer_data.get('description') is None:
+            buyer_data['description'] = company.description
+
+        return super().create(
+            company = company,
+            **buyer_data
+        )
+
+
+class BuyerProfile(VisibilityModel):
     """
     Buyer profile of a company registered in the platform.
     It could be activated when the company deems necessary.
@@ -61,13 +81,7 @@ class BuyerProfile(models.Model):
         help_text = _('date when the profile was activated'), default=timezone.now
     )
 
-    visibility = models.CharField(
-        max_length = 20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null = False,
-        blank = False
-    )
+    objects = BuyerManager()
 
     class Meta:
         db_table = 'buyer_profile'

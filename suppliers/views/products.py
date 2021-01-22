@@ -1,8 +1,5 @@
 # Views products
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django REST framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -12,7 +9,6 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 
 # Django
-from django.db import transaction
 from django.utils.decorators import method_decorator
 from django.http import Http404
 
@@ -30,9 +26,6 @@ from ..permissions import IsSupplierMemberWithEditPermission
 
 # Serializers
 from ..serializers import ProductDetailModelSerializer, ProductOverviewModelSerializer, HandleSupplierProductSerializer
-
-# Signals
-from .. import signals
 
 
 @method_decorator( name = 'destroy', decorator = swagger_auto_schema( operation_id = "Delete a product", tags = ["Products"],
@@ -81,8 +74,7 @@ class ProductViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         """Return supplier products"""
         return Product.objects.filter(
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
     def get_object(self):
@@ -90,8 +82,7 @@ class ProductViewSet(mixins.ListModelMixin,
         product = get_object_or_404(
             Product,
             id = self.kwargs['pk'],
-            supplier = self.supplier,
-            visibility = VisibilityState.OPEN.value
+            supplier = self.supplier
         )
 
         return product
@@ -111,21 +102,6 @@ class ProductViewSet(mixins.ListModelMixin,
         serializer = ProductOverviewModelSerializer(queryset, many=True)
 
         return Response(serializer.data, status = status.HTTP_200_OK)
-
-    @transaction.atomic
-    def perform_destroy(self, instance):
-        """Disable product."""
-        product_certificates = ProductCertificate.objects.filter( product = instance )
-        product_images = ProductImage.objects.filter( product = instance )
-
-        for certificate in product_certificates:
-            certificate.delete()
-            
-        for image in product_images:
-            image.delete()
-
-        instance.delete()
-        signals.post_product_delete.send(sender=Product, instance = instance)
 
     @swagger_auto_schema( tags = ["Products"], request_body = HandleSupplierProductSerializer,
         responses = { 200: ProductDetailModelSerializer, 404: openapi.Response("Not Found"),
@@ -154,6 +130,7 @@ class ProductViewSet(mixins.ListModelMixin,
         except ValidationError as e:
             raise e
         except Exception as e:
+            raise e
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
         
@@ -222,8 +199,7 @@ class ProductDetailView(APIView):
     def get_object(self, pk):
         product = get_object_or_404(
             Product,
-            id = pk,
-            visibility = VisibilityState.OPEN.value
+            id = pk
         )
 
         return product

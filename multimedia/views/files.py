@@ -74,16 +74,15 @@ class FileViewSet(mixins.ListModelMixin,
     )
     def create(self, request, *args, **kwargs):
         """Upload a file\n
-            Endpoint to upload a file to the platform. The file will register whose the user that uploaded it.\n
+            Endpoint to upload a file to the platform.\n
+            The file will register whose the company where the user uploaded it.
+            Or the username if it is an independent user (like an admin).\n
             The request body schema has to be of `multipart/form-data`.
         """
 
-        # The user is identified by its auth token
-        user = request.user
-
         file_serializer = CreateFileSerializer(
             data = request.data,
-            context = {'user': user}
+            context = {'request': request}
         )
 
         file_serializer.is_valid(raise_exception = True)

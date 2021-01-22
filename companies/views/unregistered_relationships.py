@@ -1,8 +1,5 @@
 # Models unregistered_relationships
 
-# Constants
-from ..constants import VisibilityState
-
 # Django-rest framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.generics import get_object_or_404, ListAPIView
@@ -94,30 +91,15 @@ class UnregisteredRelationshipViewSet(mixins.ListModelMixin,
         return get_object_or_404(
             UnregisteredRelationship,
             id = self.kwargs['pk'],
-            requester = self.requester_company,
-            visibility = VisibilityState.OPEN.value
+            requester = self.requester_company
         )
 
     def get_queryset(self):
         """Return company unregistered relationships"""
 
         return UnregisteredRelationship.objects.filter(
-            requester = self.requester_company,
-            visibility = VisibilityState.OPEN.value
+            requester = self.requester_company
         )
-
-    @transaction.atomic
-    def perform_destroy(self, instance):
-        """Disable unregistered relationship."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
-    
-    def reborn_entity(self, instance):
-        """Enable unregistered relationship previously deleted"""
-        instance.visibility = VisibilityState.OPEN.value
-        instance.save()
-
-        return instance
 
     @swagger_auto_schema( tags = ["Unregistered Relationships"], request_body = CreateUnregisteredRelationshipSerializer,
         responses = { 200: UnregisteredRelationshipModelSerializer, 404: openapi.Response("Not Found"),
@@ -140,26 +122,10 @@ class UnregisteredRelationshipViewSet(mixins.ListModelMixin,
             )
 
             unregistered_relationship_serializer.is_valid(raise_exception = True)
-            try:
-                unregistered_relationship = unregistered_relationship_serializer.save()
-                data = self.get_serializer(unregistered_relationship).data
-                data_status = status.HTTP_201_CREATED
-            except IntegrityError as e:
-                unregistered = UnregisteredCompany.objects.get( id = request.data.get("unregistered_id") )
-                reborn_relationship = UnregisteredRelationship.objects.get(
-                    requester = self.requester_company,
-                    unregistered = unregistered
-                )
-
-                if reborn_relationship.visibility == VisibilityState.DELETED:
-
-                    reborn_result = self.reborn_entity(reborn_relationship)
-                    data = self.get_serializer(reborn_result).data
-                    data_status = status.HTTP_201_CREATED
-                else:
-                    data = {"detail": "This relationship alredy exists"}
-                    data_status = status.HTTP_400_BAD_REQUEST
-
+            unregistered_relationship = unregistered_relationship_serializer.save()
+            
+            data = self.get_serializer(unregistered_relationship).data
+            data_status = status.HTTP_201_CREATED
         except Exception as e:
             data = {
                 'detail': str(e)
@@ -167,7 +133,6 @@ class UnregisteredRelationshipViewSet(mixins.ListModelMixin,
             data_status = status.HTTP_400_BAD_REQUEST
         
         return Response(data, status = data_status)
-
 
     @swagger_auto_schema( tags = ["Unregistered Relationships"], request_body = UpdateUnregisteredRelationshipSerializer,
         responses = { 200: UnregisteredRelationshipModelSerializer, 404: openapi.Response("Not Found"),

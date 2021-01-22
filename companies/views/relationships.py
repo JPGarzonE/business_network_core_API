@@ -1,8 +1,5 @@
 # Views relationships
 
-# Constants
-from ..constants import VisibilityState
-
 # Django
 from django.utils.decorators import method_decorator
 from django.db.models import Q
@@ -89,15 +86,14 @@ class RelationshipViewSet(mixins.ListModelMixin,
         if self.request.query_params.get('addressed_id'):
             relationship = Relationship.objects.filter(
                 requester = self.company,
-                addressed = self.request.query_params.get('addressed_id'),
-                visibility = VisibilityState.OPEN.value
+                addressed = self.request.query_params.get('addressed_id')
             )
 
             return relationship
 
         else:
             relationships = Relationship.objects.filter(
-                (Q(requester = self.company) | Q(addressed = self.company)) & Q(visibility = VisibilityState.OPEN.value)
+                (Q(requester = self.company) | Q(addressed = self.company))
             )
 
             return relationships
@@ -113,17 +109,10 @@ class RelationshipViewSet(mixins.ListModelMixin,
         relationship = get_object_or_404(
             Relationship,
             (Q(requester = self.company) | Q(addressed = self.company)),
-            id = self.kwargs['pk'],
-            visibility = VisibilityState.OPEN.value
+            id = self.kwargs['pk']
         )
 
         return relationship
-
-    def perform_destroy(self, instance):
-        """Disable relationship."""
-        instance.visibility = VisibilityState.DELETED.value
-        instance.save()
-
 
     @swagger_auto_schema( 
         operation_id = "Retrieve a Relationship", tags = ["Relationships"], security = [],

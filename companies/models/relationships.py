@@ -1,8 +1,5 @@
 # Models relationships
 
-# Constants
-from companies.constants import VisibilityState
-
 # Django
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -26,14 +23,6 @@ class Relationship(models.Model):
     type = models.CharField(
         max_length=30, blank = True, null = True,
         help_text = _('Type of relationship that has been built between the companies')
-    )
-
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
     )
 
     class Meta:
@@ -104,14 +93,6 @@ class UnregisteredRelationship(models.Model):
     type = models.CharField(
         max_length=30, blank = True, null = True,
         help_text = _('Type of relationship between a registered and a non registered company.')
-    )
-
-    visibility = models.CharField(
-        max_length=20,
-        choices = [(visibilityOption, visibilityOption.value) for visibilityOption in VisibilityState],
-        default = VisibilityState.OPEN.value,
-        null=False,
-        blank=False,
     )
 
     class Meta:

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
+from datetime import timedelta
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -48,7 +49,6 @@ THIRD_PARTY_APPS = [
 
     # Rest framework
     'rest_framework',
-    'rest_framework.authtoken',
     
     # Swagger
     'drf_yasg',
@@ -60,6 +60,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     'multimedia',
     'companies',
+    'users',
     'suppliers',
     'buyers',
     'market',
@@ -116,9 +117,9 @@ DATABASES = {
     # },
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        # 'OPTIONS': {
-        #     'options': '-c search_path=test_migration_schema'
-        # },
+        'OPTIONS': {
+            'options': '-c search_path=test_schema'
+        },
         'NAME': 'conectydb',
         'USER': 'dbmanager',
         'PASSWORD': 'conectyadmindatabase0899',
@@ -147,7 +148,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-AUTH_USER_MODEL = 'companies.User'
+AUTH_USER_MODEL = 'users.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -176,11 +177,12 @@ STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 ]
 
+
 # Django Rest Framework
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.TokenAuthentication',
-    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'DEFAULT_SCHEMA_CLASS':'rest_framework.schemas.coreapi.AutoSchema',
@@ -188,12 +190,22 @@ REST_FRAMEWORK = {
     'SEARCH_PARAM': 'q',
 }
 
+
+# JWT Authentication config
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': True,
+}
+
+
 # Corsheaders
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'https://joinconecty.com',
     'http://192.168.0.9:3000',
 )
+
 
 # Media files storage config
 AWS_UPLOAD_BUCKET = "business-network-profile-files"
@@ -216,6 +228,7 @@ AWS_DEFAULT_ACL = None
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
+
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
@@ -231,6 +244,7 @@ EMAIL_USE_TLS = True
 
 DEFAULT_FROM_EMAIL = 'api.conecty@gmail.com'
 
+
 # Documentation Settings
 SWAGGER_SETTINGS = {
    'SECURITY_DEFINITIONS': {
@@ -239,9 +253,11 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'in': 'header',
             'description': """
-                To authenticate a request, the `Authorization` header must be provided along with the user auth token (A bearer token). \n
-                The respective value of the Authorization header must have the format: `Token <auth_token>`.\n
-                This auth token is provided in the below **Authentication** section by the `login` or `signup` endpoints.
+                To authenticate a request, the `Authorization` header must be provided along with the user access token (JWT token). \n
+                The respective value of the Authorization header must have the format: `Bearer <access_token>`.\n
+                To obtain the auth tokens you must go to the `login` endpoint, this will response with two tokens:
+                one for access (expires each 15 min) and other for refresh the access token (expires each day).\n
+                For refresh both tokens you must go to the `Refresh token` endpoint.
             """
         }
    }
