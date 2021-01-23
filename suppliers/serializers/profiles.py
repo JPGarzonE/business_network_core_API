@@ -61,7 +61,7 @@ class DocumentationSupplierProfileSerializer(serializers.Serializer):
 
     display_tutorial = serializers.BooleanField()
 
-    company = ProfileSupplierModelSerializer()
+    supplier = ProfileSupplierModelSerializer()
 
     principal_location = SupplierLocationNestedModelSerializer()
 
