@@ -8,7 +8,7 @@ from searches.views import *
 
 router = routers.DefaultRouter()
 router.register('companies', SearchCompaniesViewSet, basename="search__companies")
-router.register('companies/unregistered', SearchUnregisteredCompaniesViewSet, basename="search__unregistered_companies")
+router.register('unregistered-companies', SearchUnregisteredCompaniesViewSet, basename="search__unregistered_companies")
 router.register('products', SearchShowcaseProductsViewSet, basename="search__products")
 
 urlpatterns = [
