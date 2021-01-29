@@ -27,7 +27,7 @@ def create_showcase_product(instance):
         product = instance,
         showcase_section = showcase_section,
         supplier_name = instance.supplier.display_name,
-        supplier_accountname = instance.company.user.username
+        supplier_accountname = instance.supplier.company.accountname
     )
 
 
