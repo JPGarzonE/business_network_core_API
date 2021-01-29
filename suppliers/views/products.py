@@ -154,6 +154,7 @@ class ProductViewSet(mixins.ListModelMixin,
         except ValidationError as e:
             raise e
         except Exception as e:
+            raise e
             data = {"detail": str(e)}
             data_status = status.HTTP_400_BAD_REQUEST
         

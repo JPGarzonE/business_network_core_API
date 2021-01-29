@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
                 ('measurement_unit', models.CharField(blank=True, help_text='Type of unit that is used to measure and offer the product.', max_length=30, null=True)),
                 ('tariff_heading', models.CharField(blank=True, help_text='Value that is used in foreign trade to identify uniquely a product.', max_length=20, null=True)),
                 ('minimum_purchase', models.CharField(blank=True, help_text='minimum amount for which the product owner is willing to sell the product.', max_length=30, null=True)),
-                ('description', models.CharField(blank=True, help_text='description for add the principal characteristics of the product.', max_length=155, null=True)),
+                ('description', models.CharField(blank=True, help_text='description for add the principal characteristics of the product.', max_length=500, null=True)),
                 ('visibility', models.CharField(choices=[(companies.constants.VisibilityState['PRIVATE'], 'PRIVATE'), (companies.constants.VisibilityState['OPEN'], 'OPEN'), (companies.constants.VisibilityState['PERSONALIZED'], 'PERSONALIZED'), (companies.constants.VisibilityState['DELETED'], 'DELETED')], default='OPEN', max_length=20)),
             ],
             options={

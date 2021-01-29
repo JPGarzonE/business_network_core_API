@@ -92,9 +92,9 @@ class Product(models.Model):
         max_length=30, blank=True, null=True
     )
     
-    description = models.CharField(
+    description = models.TextField(
         help_text = _('description for add the principal characteristics of the product.'),
-        max_length=155, blank=True, null=True
+        blank=True, null=True
     )
 
     certificates = models.ManyToManyField(
