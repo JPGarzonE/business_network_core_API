@@ -192,7 +192,7 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:3000',
     'https://joinconecty.com',
-    'http://192.168.0.9:3000',
+    'https://www.joinconecty.com'
 )
 
 # Media files storage config
