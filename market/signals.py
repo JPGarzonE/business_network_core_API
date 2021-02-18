@@ -23,6 +23,10 @@ def create_showcase_product(instance):
         name = instance.name,
         tariff_heading = instance.tariff_heading,
         description = instance.description,
+        minimum_price = instance.minimum_price,
+        maximum_price = instance.maximum_price,
+        measurement_unit = instance.measurement_unit,
+        minimum_purchase = instance.minimum_purchase,
         principal_image = instance.principal_image,
         product = instance,
         showcase_section = showcase_section,
@@ -40,6 +44,10 @@ def update_showcase_product(instance, showcase_product):
     showcase_product.name = instance.name
     showcase_product.tariff_heading = instance.tariff_heading
     showcase_product.description = instance.description
+    showcase_product.minimum_price = instance.minimum_price
+    showcase_product.maximum_price = instance.maximum_price
+    showcase_product.measurement_unit = instance.measurement_unit
+    showcase_product.minimum_purchase = instance.minimum_purchase
     showcase_product.principal_image = instance.principal_image
     showcase_product.showcase_section = get_showcase_section(name = instance.category)
     showcase_product.save()
