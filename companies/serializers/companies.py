@@ -170,6 +170,8 @@ class SignupSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, data):
         """Handle company and user first creation."""
+        from users.seralizers import UserAuthenticationTokenSerializer
+
         data.pop('password_confirmation')
         email = data.get('email')
         password = data.get('password')

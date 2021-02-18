@@ -32,7 +32,11 @@ class SupplierProfileView(APIView):
         responses = { 200: DocumentationSupplierProfileSerializer, 404: openapi.Response("Not Found")}, security = []
     )
     def get(self, request, accountname, format = None):
-        """Return the profile of a supplier with the accountname given by param."""
+        """Return the profile of a supplier with the accountname given by param.\n
+            The Authorization access token is not required if the requesting user is a visitor (Buyer, Anonymous, etc).
+            If the requester user want to edit the profile because it have access, the Authorization header must
+            be included for validating credentials and returning the editable attribute as true if its the case.
+        """
 
         try:
             supplier = self.get_object(accountname)

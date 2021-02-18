@@ -84,7 +84,7 @@ class Image(models.Model):
     
     size = models.CharField(
         help_text = _("Size of the image in bytes"), 
-        max_length=7
+        max_length=8
     )
 
     class Types(Enum):

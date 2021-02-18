@@ -43,7 +43,7 @@ class BuyerProfileView(APIView):
 
 
     @swagger_auto_schema( operation_id = "Retrieve Buyer Profile", tags = ["Profiles"],
-        responses = { 200: BuyerProfileSerializer, 404: openapi.Response("Not Found")}, security = []
+        responses = { 200: BuyerProfileSerializer, 404: openapi.Response("Not Found")}, security = [{ "api-key": [] }]
     )
     def get(self, request, accountname, format = None):
         """Return the profile of a buyer with the accountname given by param."""
