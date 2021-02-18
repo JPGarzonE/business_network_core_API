@@ -118,7 +118,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'OPTIONS': {
-            'options': '-c search_path=test_schema'
+            'options': '-c search_path=production'
         },
         'NAME': 'conectydb',
         'USER': 'dbmanager',
