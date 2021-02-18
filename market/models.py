@@ -18,7 +18,7 @@ class ShowcaseProduct(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=50)
     tariff_heading = models.CharField(max_length = 20, blank = True, null = True)
-    description = models.CharField(max_length=155, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
     principal_image = models.ForeignKey(Image, models.PROTECT, null = True)
     showcase_section = models.ForeignKey(ShowcaseSection, models.PROTECT)
     product = models.ForeignKey(Product, models.PROTECT)

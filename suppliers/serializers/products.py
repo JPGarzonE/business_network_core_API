@@ -148,7 +148,7 @@ class HandleSupplierProductSerializer(serializers.ModelSerializer):
     )
 
     description = serializers.CharField(
-        max_length = 155,
+        max_length = 500,
         required = False,
         allow_null = True,
         allow_blank = True
